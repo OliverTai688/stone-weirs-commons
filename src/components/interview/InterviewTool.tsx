@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { engineLabel, type Engine } from "@/components/ask/AskBox";
 import { Link, useApi, useI18n } from "@/i18n/client";
 import { fmt } from "@/i18n/config";
-import { ConceptGraph } from "@/components/graph/ConceptGraph";
+import { LazyConceptGraph as ConceptGraph } from "@/components/graph/LazyConceptGraph";
 import { crmMeta } from "@/lib/crm";
 import { demoScript, emptyState, facetLabels, openingQuestion, type Facet, type InterviewState, type Turn } from "@/lib/interview";
 
@@ -101,7 +101,7 @@ export function InterviewTool() {
   return (
     <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
       {/* Chat */}
-      <section className="card flex h-[680px] flex-col !p-0">
+      <section className="card flex h-[72svh] min-h-[460px] flex-col !p-0 md:h-[680px]">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <div>
             <p className="text-sm font-bold">{iv.panelTitle}</p>
@@ -154,10 +154,10 @@ export function InterviewTool() {
             relations={state.relations}
             selected={sel}
             onSelect={setSel}
-            height={480}
+            height="clamp(340px, 56vh, 480px)"
           />
         ) : (
-          <div className="flex h-[480px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-center text-sm text-slate-500">
+          <div className="flex h-[clamp(240px,40vh,480px)] items-center justify-center rounded-2xl border border-dashed border-slate-300 px-4 text-center text-sm text-slate-500">
             {iv.empty1}<br />{iv.empty2}
           </div>
         )}

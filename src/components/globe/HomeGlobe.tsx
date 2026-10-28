@@ -6,17 +6,24 @@ import { Link, useI18n } from "@/i18n/client";
 import { fmt, pick } from "@/i18n/config";
 import type { LocalNode, NodeLink } from "@/lib/types";
 
-const GlobeView = dynamic(() => import("./GlobeView"), {
-  ssr: false,
-  loading: () => <GlobeFallbackArt />,
-});
+const GlobeView = dynamic(() => import("./GlobeView"), { ssr: false });
 
-function GlobeFallbackArt() {
+/** Static picture of the globe: paints instantly and stays until the 3D globe is ready. */
+function GlobePoster({ hidden = false }: { hidden?: boolean }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center md:left-[28%]">
-      <div className="aspect-square w-[min(80vw,640px)] rounded-full bg-[radial-gradient(circle_at_35%_30%,#1f4d6b,#0d2a44_55%,#06182a)] shadow-[0_0_120px_rgba(123,196,178,0.35)]" />
+    <div aria-hidden className={`pointer-events-none absolute inset-x-0 bottom-0 top-[34%] flex items-center justify-center transition-opacity duration-700 md:inset-y-0 md:left-[28%] md:top-0 ${hidden ? "opacity-0" : "opacity-100"}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- tiny pre-sized webp, no optimisation needed */}
+      <img src="/globe-poster.webp" alt="" width={814} height={794} fetchPriority="high" decoding="async" className="h-auto w-[min(108vw,72vh)] max-w-none md:w-[min(56vw,84vh)]" />
     </div>
   );
+}
+
+/** Load the 3D globe (≈560 KB) only when the device and connection can take it. */
+function shouldAutoload3d() {
+  const c = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (c?.saveData || /(^|-)2g|3g/.test(c?.effectiveType ?? "")) return false;
+  const small = window.innerWidth < 768;
+  return !small || (navigator.hardwareConcurrency ?? 4) >= 6;
 }
 
 function supportsWebGL() {
@@ -38,19 +45,27 @@ export function HomeGlobe({ nodes, links, stats }: Props) {
   const { t, lang } = useI18n();
   const h = t.home;
   const [selected, setSelected] = useState<string | null>(null);
-  const [mode, setMode] = useState<"3d" | "list" | "pending">("pending");
+  const [mode, setMode] = useState<"3d" | "list" | "poster">("poster");
+  const [ready, setReady] = useState(false);
   const node = nodes.find((n) => n.slug === selected);
 
   useEffect(() => {
-    const low = window.matchMedia("(prefers-reduced-motion: reduce)").matches || !supportsWebGL();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- capability check must run in the browser
-    setMode(low ? "list" : "3d");
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !supportsWebGL() || !shouldAutoload3d()) return;
+    // Wait until the page is idle so the 3D bundle never competes with the first paint.
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    const start = () => setMode((m) => (m === "poster" ? "3d" : m));
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(start, { timeout: 2500 });
+      return () => (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(start, 1200);
+    return () => clearTimeout(t);
   }, []);
 
   return (
     <section className="relative h-[calc(100svh-3.5rem)] min-h-[560px] overflow-hidden bg-[radial-gradient(ellipse_at_center,#0f2f4a_0%,#0f1e2e_55%,#08121c_100%)] text-white">
-      {mode === "3d" ? <GlobeView nodes={nodes} links={links} selected={selected} onSelect={setSelected} lang={lang} /> : <GlobeFallbackArt />}
-
+      {mode === "3d" && <GlobeView nodes={nodes} links={links} selected={selected} onSelect={setSelected} lang={lang} onReady={() => setReady(true)} />}
+      {mode !== "list" && <GlobePoster hidden={mode === "3d" && ready} />}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-[5] w-full bg-gradient-to-r from-ink/85 via-ink/30 to-transparent md:w-2/3" />
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10">
         <div className="container-page pt-8 md:pt-12">
@@ -69,13 +84,17 @@ export function HomeGlobe({ nodes, links, stats }: Props) {
 
       <div className="absolute bottom-5 left-0 z-10 w-full">
         <div className="container-page flex flex-wrap items-end justify-between gap-4">
-          <dl className="flex gap-6 rounded-2xl bg-white/5 px-5 py-3 text-xs backdrop-blur">
-            <div><dt className="text-white/60">{h.statCountries}</dt><dd className="text-xl font-bold">{stats.countries}</dd></div>
-            <div><dt className="text-white/60">{h.statNodes}</dt><dd className="text-xl font-bold">{stats.activeNodes}<span className="ml-1 text-xs font-normal text-white/60">{fmt(h.invitedCount, { n: stats.invitedNodes })}</span></dd></div>
-            <div><dt className="text-white/60">{h.statRecords}</dt><dd className="text-xl font-bold">{stats.records}</dd></div>
+          <dl className="flex gap-4 whitespace-nowrap rounded-2xl bg-white/5 px-4 py-2.5 text-[11px] backdrop-blur md:gap-6 md:px-5 md:py-3 md:text-xs">
+            <div><dt className="text-white/60">{h.statCountries}</dt><dd className="text-lg font-bold md:text-xl">{stats.countries}</dd></div>
+            <div><dt className="text-white/60">{h.statNodes}</dt><dd className="text-lg font-bold md:text-xl">{stats.activeNodes}<span className="ml-1 text-[11px] font-normal text-white/60">{fmt(h.invitedCount, { n: stats.invitedNodes })}</span></dd></div>
+            <div><dt className="text-white/60">{h.statRecords}</dt><dd className="text-lg font-bold md:text-xl">{stats.records}</dd></div>
           </dl>
-          <button type="button" onClick={() => setMode(mode === "list" ? "3d" : "list")} className="rounded-full bg-white/10 px-4 py-2 text-xs hover:bg-white/20">
-            {mode === "list" ? h.to3d : h.toList}
+          <button
+            type="button"
+            onClick={() => setMode(mode === "3d" ? "list" : "3d")}
+            className={`rounded-full px-4 py-2 text-xs backdrop-blur ${mode === "poster" ? "bg-white/20 font-semibold hover:bg-white/30" : "bg-white/10 hover:bg-white/20"}`}
+          >
+            {mode === "poster" ? h.load3d : mode === "list" ? h.to3d : h.toList}
           </button>
         </div>
       </div>

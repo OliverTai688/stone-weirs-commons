@@ -2,7 +2,7 @@
 
 import { Background, Controls, MarkerType, ReactFlow, type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { crmMeta, crmOrder } from "@/lib/crm";
 import { useI18n } from "@/i18n/client";
 import type { CrmClass } from "@/lib/types";
@@ -74,6 +74,12 @@ function layout(entities: GraphEntity[], maxRowWidth: number) {
 
 export function ConceptGraph({ entities, relations, selected, onSelect, showCodes, height = 560 }: Props) {
   const { t } = useI18n();
+  // On phones, don't shrink the whole map to unreadable size: start legible and let people pan.
+  const [minZoom, setMinZoom] = useState(0.3);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- viewport size is only known in the browser
+    if (window.innerWidth < 640) setMinZoom(0.55);
+  }, []);
   const { pos, headers } = useMemo(() => layout(entities, 1150), [entities]);
 
   const headerNodes: Node[] = headers.map((h) => ({
@@ -141,11 +147,12 @@ export function ConceptGraph({ entities, relations, selected, onSelect, showCode
         nodes={nodes}
         edges={edges}
         fitView
-        fitViewOptions={{ padding: 0.08 }}
+        fitViewOptions={{ padding: 0.08, minZoom }}
         onNodeClick={(_, n) => !n.id.startsWith("hdr-") && onSelect?.(n.id)}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.3}
+        minZoom={minZoom}
+        key={minZoom}
       >
         <Background gap={24} color="#e2e8f0" />
         <Controls showInteractive={false} />

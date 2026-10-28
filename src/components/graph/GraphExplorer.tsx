@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ConceptGraph } from "./ConceptGraph";
+import { LazyConceptGraph as ConceptGraph } from "./LazyConceptGraph";
 import { crmMeta } from "@/lib/crm";
 import { Link, useI18n } from "@/i18n/client";
 import { pick } from "@/i18n/config";
@@ -33,7 +33,7 @@ export function GraphExplorer({ entities, relations, nodeSlug }: { entities: Ent
           selected={sel}
           onSelect={setSel}
           showCodes={codes}
-          height={620}
+          height="clamp(380px, 64vh, 620px)"
         />
         <div className="mt-3 flex flex-wrap gap-3 text-xs">
           {Object.entries(crmMeta).map(([k, m]) => (

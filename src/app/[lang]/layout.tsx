@@ -24,7 +24,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
   return (
     <html lang={intlLocale(lang)} className="h-full">
       <body className="flex min-h-full flex-col">
-        <I18nProvider lang={lang}>
+        <I18nProvider lang={lang} t={t}>
           <Suspense fallback={<div className="h-14 bg-ink" />}>
             <SiteHeader />
           </Suspense>

@@ -3,13 +3,14 @@
 import NextLink from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, useContext, type ComponentProps } from "react";
-import { dictionaries, type Dict } from "./dictionaries";
+import type { Dict } from "./dictionaries";
 import { LANG_COOKIE, localePath, locales, type Lang } from "./config";
 
-const Ctx = createContext<{ lang: Lang; t: Dict }>({ lang: "en", t: dictionaries.en });
+// Only the current language's dictionary is sent to the browser (passed in from the server layout).
+const Ctx = createContext<{ lang: Lang; t: Dict }>(null as unknown as { lang: Lang; t: Dict });
 
-export function I18nProvider({ lang, children }: { lang: Lang; children: React.ReactNode }) {
-  return <Ctx.Provider value={{ lang, t: dictionaries[lang] }}>{children}</Ctx.Provider>;
+export function I18nProvider({ lang, t, children }: { lang: Lang; t: Dict; children: React.ReactNode }) {
+  return <Ctx.Provider value={{ lang, t }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

@@ -15,9 +15,10 @@ interface Props {
   selected: string | null;
   onSelect: (slug: string) => void;
   lang: Lang;
+  onReady?: () => void;
 }
 
-export default function GlobeView({ nodes, links, selected, onSelect, lang }: Props) {
+export default function GlobeView({ nodes, links, selected, onSelect, lang, onReady }: Props) {
   const ref = useRef<GlobeMethods | undefined>(undefined);
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -49,7 +50,25 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
     if (!el) return;
     const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
     ro.observe(el);
-    return () => ro.disconnect();
+    // Stop rendering when the globe is scrolled away or the tab is hidden (saves battery on phones).
+    let visible = true;
+    const sync = () => {
+      const g = ref.current;
+      if (!g) return;
+      if (visible && document.visibilityState === "visible") g.resumeAnimation();
+      else g.pauseAnimation();
+    };
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      sync();
+    });
+    io.observe(el);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
   }, []);
 
   useEffect(() => {
@@ -61,11 +80,11 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
     c.autoRotateSpeed = 0.35;
     c.enableZoom = true;
     const target = nodes.find((n) => n.slug === selected);
-    if (target) g.pointOfView({ lat: target.display.lat - 4, lng: target.display.lng, altitude: 1.3 }, 1200);
+    if (target) g.pointOfView({ lat: target.display.lat - 4, lng: target.display.lng, altitude: window.innerWidth < 768 ? 2.2 : 1.3 }, 1200);
   }, [selected, nodes]);
 
   return (
-    <div ref={wrap} className="absolute inset-0 md:left-[28%]">
+    <div ref={wrap} className="absolute inset-x-0 bottom-0 top-[34%] md:inset-y-0 md:left-[28%] md:top-0">
       <Globe
         ref={ref}
         width={size.w}
@@ -75,7 +94,14 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
         showAtmosphere
         atmosphereColor="#7bc4b2"
         atmosphereAltitude={0.18}
-        onGlobeReady={() => ref.current?.pointOfView({ lat: 18, lng: 128, altitude: 2.1 }, 0)}
+        onGlobeReady={() => {
+          const g = ref.current;
+          if (!g) return;
+          // Phones: cap the pixel ratio; the globe is mostly flat colour, so 1.5x is visually identical and far cheaper.
+          g.renderer().setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.5 : 2));
+          g.pointOfView({ lat: 18, lng: 128, altitude: window.innerWidth < 768 ? 3.1 : 2.1 }, 0);
+          onReady?.();
+        }}
         polygonsData={polygons}
         polygonCapColor={() => "rgba(123,196,178,0.22)"}
         polygonSideColor={() => "rgba(0,0,0,0)"}
@@ -104,6 +130,8 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
           const active = n.status === "active";
           // Put the label on the left when a neighbouring active node would collide.
           const left = !active && nodes.some((o) => o.status === "active" && Math.hypot(o.display.lat - n.display.lat, o.display.lng - n.display.lng) < 4);
+          // Phones: only the active node is labelled; invited dots show their name on tap (node card).
+          const quiet = left || (!active && window.innerWidth < 768);
           const dot = active ? 14 : 10;
           // The globe centres each HTML element on its coordinate, so the element itself is a
           // zero-size anchor: the dot's centre sits exactly on the point, the label hangs beside it.
@@ -115,8 +143,8 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
           ring.style.cssText = `position:absolute;left:${-dot / 2}px;top:${-dot / 2}px;width:${dot}px;height:${dot}px;box-sizing:border-box;border-radius:50%;background:${active ? "#e0785a" : "rgba(123,196,178,.25)"};border:2px solid ${active ? "#fff" : "#7bc4b2"};box-shadow:0 0 12px ${active ? "#e0785a" : "#7bc4b2"};`;
           const label = document.createElement("span");
           label.textContent = pick(n.name, lang) || n.slug;
-          label.style.cssText = `position:absolute;top:-9px;${left ? `right:${dot / 2 + 5}px;` : `left:${dot / 2 + 5}px;`}white-space:nowrap;font:600 ${active ? 13 : 12}px var(--font-sans);line-height:18px;color:${active ? "#fff" : "rgba(255,255,255,.78)"};text-shadow:0 1px 4px #000;${left ? "display:none;" : ""}`;
-          if (left) {
+          label.style.cssText = `position:absolute;top:-9px;${left ? `right:${dot / 2 + 5}px;` : `left:${dot / 2 + 5}px;`}white-space:nowrap;font:600 ${active ? 13 : 12}px var(--font-sans);line-height:18px;color:${active ? "#fff" : "rgba(255,255,255,.78)"};text-shadow:0 1px 4px #000;${quiet ? "display:none;" : ""}`;
+          if (quiet) {
             el.title = pick(n.name, lang) || n.slug;
             el.onmouseenter = () => (label.style.display = "inline");
             el.onmouseleave = () => (label.style.display = "none");
