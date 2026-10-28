@@ -1,69 +1,59 @@
-import Image from "next/image";
+import Link from "next/link";
+import { HomeGlobe } from "@/components/globe/HomeGlobe";
+import { listNodeLinks, listNodes, stats } from "@/lib/repo";
 
-export default function Home() {
+export default async function Home() {
+  const [nodes, links, s] = await Promise.all([listNodes(), listNodeLinks(), stats()]);
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <>
+      <HomeGlobe nodes={nodes} links={links} stats={s} />
+
+      <section className="container-page py-16">
+        <p className="eyebrow">兩個工具・Two tools</p>
+        <h2 className="mt-2 text-2xl font-bold md:text-3xl">從在地故事，到可以互通的知識</h2>
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <Link href="/tools/interview" className="card group transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="eyebrow">工具一</p>
+            <h3 className="mt-1 text-xl font-bold">用說的，留下你的故事</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              貼上文字或念一段故事，AI 用半結構訪談一題一題追問，同時把人物、地點、事件、器物之間的關係，畫成 CIDOC-CRM 概念圖。每個節點都連回你說的那句話。
+            </p>
+            <span className="mt-4 inline-block text-sm font-semibold text-tide group-hover:underline">開始訪談 →</span>
+          </Link>
+          <Link href="/ask" className="card group transition hover:-translate-y-0.5 hover:shadow-md">
+            <p className="eyebrow">工具二</p>
+            <h3 className="mt-1 text-xl font-bold">可信的 AI 導覽與跨研究交流</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              AI 只根據經過治理的紀錄回答，每句話都附上出處。可以用在博物館與社區展場的導覽，也能讓不同領域的研究者交流時保留脈絡。
+            </p>
+            <span className="mt-4 inline-block text-sm font-semibold text-tide group-hover:underline">試問 AI →</span>
+          </Link>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="bg-sand/60 py-16">
+        <div className="container-page grid gap-8 md:grid-cols-3">
+          {[
+            ["保留脈絡，而不是只剩欄位", "CIDOC-CRM 記錄的是事物「之間」：從哪來、往哪去、被誰使用、長出什麼文化。"],
+            ["治理先於生成", "每筆紀錄都有出處、授權與同意狀態。在新屋的試驗中，AI 幻覺率從 62.5% 降到 0%。"],
+            ["由下而上，從在地開始", "每個社區先建立自己的節點、自己治理；只要概念一致，AI 就能把各地連起來。"],
+          ].map(([t, d]) => (
+            <div key={t}>
+              <h3 className="text-lg font-bold text-navy">{t}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{d}</p>
+            </div>
+          ))}
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="container-page py-16 text-center">
+        <h2 className="text-2xl font-bold">石滬的故事還在繼續，下一個點，可能就是你的海岸。</h2>
+        <p className="mt-2 text-slate-600">The story continues — the next point on the map could be your shore.</p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Link href="/join" className="btn-primary">30 秒加入</Link>
+          <Link href="/apconf" className="btn-outline">APCONF 發表資訊</Link>
+        </div>
+      </section>
+    </>
   );
 }

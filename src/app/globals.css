@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #0f1e2e;
+  --color-navy: #1f3a5f;
+  --color-tide: #2e7d8c;
+  --color-foam: #e8f1f4;
+  --color-sand: #f6f1e7;
+  --color-coral: #e0785a;
+  --color-reef: #7bc4b2;
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+html { scroll-behavior: smooth; }
+body { @apply bg-white text-ink antialiased; font-family: var(--font-sans); }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@utility container-page { @apply mx-auto w-full max-w-6xl px-5 md:px-8; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition; }
+@utility btn-primary { @apply btn bg-coral text-white hover:brightness-110; }
+@utility btn-ghost { @apply btn border border-white/40 hover:bg-white/10; }
+@utility btn-dark { @apply btn bg-navy text-white hover:bg-ink; }
+@utility btn-outline { @apply btn border border-navy/30 text-navy hover:bg-foam; }
+@utility card { @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm; }
+@utility chip { @apply inline-flex items-center rounded-full bg-foam px-2.5 py-0.5 text-xs font-medium text-navy; }
+@utility eyebrow { @apply text-xs font-bold uppercase tracking-[0.18em] text-tide; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
 }

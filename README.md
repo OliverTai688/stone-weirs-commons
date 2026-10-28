@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 石滬・共享未來 Stone Weirs, Shared Futures
 
-## Getting Started
+亞太海洋文化遺產交流平台（Pilot）。APCONF 論文〈Stone Weirs, Shared Futures〉的實作。
 
-First, run the development server:
+- **3D 地球首頁**：各地在地節點（新屋為第一個，其他為邀請中）
+- **工具一** `/tools/interview`：AI 半結構訪談 → CIDOC-CRM 概念圖（每個節點連回原話）
+- **工具二** `/ask`、`/nodes/xinwu/guide`、`/exhibit/xinwu`：只根據治理紀錄回答、強制引用的問答、導覽與展場 QR
+- **後台** `/admin`：研究者聯絡名單（只匯出同意聯絡者）
+
+## 開發
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+不需要任何金鑰即可執行（示範模式）。接上 Supabase、Google 登入、Cloudflare R2 的步驟見 [SETUP.md](./SETUP.md)。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 結構
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 路徑 | 說明 |
+|---|---|
+| `src/data/` | 示範資料：僅使用論文中出現的事實；邀請中節點不含任何內容 |
+| `src/lib/repo.ts` | 資料存取層（之後換成 Supabase，頁面不需改動） |
+| `src/lib/qa.ts` | 治理檢索問答：只檢索已審核且非限制級紀錄、引用驗證、地理隱私防護 |
+| `src/lib/interview.ts` | 工具一的訪談面向、示範抽取器與 LLM 提示 |
+| `supabase/schema.sql` | 資料表與 RLS 權限（單一正式資料庫） |
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16（App Router、Cache Components）、Tailwind CSS 4、react-globe.gl（Three.js）、React Flow。
