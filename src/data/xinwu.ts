@@ -22,19 +22,19 @@ const gov = (over: Partial<Governance> = {}): Governance => ({
   ...over,
 });
 
-const SRC = "Chi Wen-Fen, \"Centennial stone weir culture: Xinwu, Taoyuan as a story of human–nature harmony\", Forestry and Nature Conservation Agency (forest.gov.tw/0010173)";
+const SRC = "戚文芬（Chi Wen-Fen），〈傳承百年的石滬文化〉（Centennial stone weir culture: Xinwu, Taoyuan as a story of human–nature harmony），林業及自然保育署 forest.gov.tw/0010173";
 
 export const xinwuEntities: Entity[] = [
   {
     id: "X-SRC",
     nodeSlug: "xinwu",
     crmClass: "E73",
-    label: { "zh-Hant": "來源報導：新屋百年石滬文化", en: "Source reportage: Centennial stone weir culture of Xinwu" },
+    label: { "zh-Hant": "來源報導：〈傳承百年的石滬文化〉", en: "Source reportage: Centennial stone weir culture of Xinwu" },
     description: {
       "zh-Hant": "本節點的核心敘事來源，約 4,000 字的已出版文化報導。所有紀錄都經由 PROV-O 的 wasDerivedFrom 連回這份文件。",
       en: "The core narrative source of this node: a published cultural reportage of about 4,000 characters. Every record traces back to it via PROV-O wasDerivedFrom.",
     },
-    keywords: ["來源", "報導", "Chi Wen-Fen", "source", "reportage", "出處"],
+    keywords: ["來源", "報導", "戚文芬", "Chi Wen-Fen", "source", "reportage", "出處"],
     source: SRC,
     governance: gov(),
   },
@@ -57,8 +57,8 @@ export const xinwuEntities: Entity[] = [
     crmClass: "E53",
     label: { "zh-Hant": "石滬故事館", en: "Stone Weir Story Hall" },
     description: {
-      "zh-Hant": "石滬故事館的前身是警察宿舍。",
-      en: "The Stone Weir Story Hall was formerly a police dormitory (警察宿舍).",
+      "zh-Hant": "石滬故事館的前身是三十幾年前的警察宿舍，民國 110 年（2021 年）改建為石滬故事館。",
+      en: "The Stone Weir Story Hall was a police dormitory (警察宿舍) built over 30 years ago, converted into the Story Hall in 2021.",
     },
     keywords: ["故事館", "石滬故事館", "警察宿舍", "以前", "前身", "story hall", "police dormitory", "previous use", "former", "before"],
     source: SRC,
@@ -137,12 +137,12 @@ export const xinwuEntities: Entity[] = [
     id: "X-AC-AUTHOR",
     nodeSlug: "xinwu",
     crmClass: "E39",
-    label: { "zh-Hant": "Chi Wen-Fen（報導作者）", en: "Chi Wen-Fen (author)" },
+    label: { "zh-Hant": "戚文芬（報導作者）", en: "Chi Wen-Fen (author)" },
     description: {
       "zh-Hant": "來源報導的作者。本節點的資料以已出版且具名的報導為基礎，因此 FPIC 狀態暫記為「推定」。",
       en: "Author of the source reportage. Because the data derive from a published, attributed narrative, FPIC is currently recorded as 'assumed'.",
     },
-    keywords: ["作者", "誰寫", "author", "Chi Wen-Fen"],
+    keywords: ["作者", "誰寫", "author", "戚文芬", "Chi Wen-Fen"],
     source: SRC,
     governance: gov(),
   },
@@ -191,8 +191,8 @@ export const xinwuEntities: Entity[] = [
     crmClass: "E5",
     label: { "zh-Hant": "警察宿舍轉為石滬故事館", en: "Police dormitory becomes the Story Hall" },
     description: {
-      "zh-Hant": "原本的警察宿舍成為石滬故事館。",
-      en: "The former police dormitory became the Stone Weir Story Hall.",
+      "zh-Hant": "原本的警察宿舍在民國 110 年（2021 年）改建為石滬故事館。",
+      en: "The former police dormitory was converted into the Stone Weir Story Hall in 2021.",
     },
     keywords: ["故事館", "警察宿舍", "改建", "再利用", "story hall", "reuse"],
     source: SRC,

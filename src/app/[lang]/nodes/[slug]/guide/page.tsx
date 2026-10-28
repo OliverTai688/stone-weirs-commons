@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Cite } from "@/components/Cite";
 import { QrCode } from "@/components/QrCode";
+import { WenGuide } from "@/components/guide/WenGuide";
+import { QG } from "@/components/guide/wenQuick";
 import { Link } from "@/i18n/client";
 import { fmt, locales, pick } from "@/i18n/config";
 import { getDict } from "@/i18n/server";
@@ -29,6 +31,7 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/nodes/[sl
   const { slug } = await params;
   const { t, lang } = await getDict();
   const g = t.guide;
+  const q = QG[lang];
   const node = await getNode(slug);
   if (!node || node.status !== "active") notFound();
   const entities = await listEntities(slug);
@@ -36,38 +39,63 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/nodes/[sl
   const other = lang === "zh" ? "en" : "zh";
 
   return (
-    <div className="container-page grid gap-10 py-10 lg:grid-cols-[1fr_300px]">
-      <article>
-        <Link href={`/nodes/${slug}`} className="text-sm text-tide hover:underline">← {pick(node.name, lang)}</Link>
-        <p className="eyebrow mt-4">{g.eyebrow}</p>
-        <h1 className="mt-1 text-3xl font-bold">{fmt(g.title, { node: pick(node.name, lang) })}</h1>
-        <p className="mt-2 text-sm text-slate-600">{g.sub}</p>
-        <div className="mt-8 space-y-10">
-          {CHAPTERS.map((ch, i) => (
-            <section key={ch.en}>
-              <h2 className="text-xl font-bold text-navy">{fmt(g.chapter, { n: i + 1 })}　{ch[lang]}</h2>
-              <p className="text-xs text-slate-500">{ch[other]}</p>
-              <div className="mt-3 space-y-2 leading-relaxed">
-                {ch.ids.map((id) => {
-                  const e = get(id);
-                  return e ? (
-                    <p key={id}>
-                      {pick(e.description, lang)}
-                      <Cite id={id} node={slug} label={pick(e.label, lang)} lang={lang} />
-                    </p>
-                  ) : null;
-                })}
-              </div>
-            </section>
-          ))}
+    <>
+      {/* Tool 2 in action: the 石塭問答 guide, opening with a quick guide */}
+      <WenGuide siteLang={lang} nodeSlug={slug} />
+
+      <section className="border-y border-slate-200 bg-white py-12">
+        <div className="container-page">
+          <p className="eyebrow">{g.eyebrow}</p>
+          <h2 className="mt-1 text-2xl font-bold">{q.how}</h2>
+          <ol className="mt-6 grid gap-4 md:grid-cols-4">
+            {q.steps.map(([title, body], i) => (
+              <li key={title} className="card">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-sm font-bold text-white">{i + 1}</span>
+                <h3 className="mt-3 font-bold">{title}</h3>
+                {/* step text contains small inline illustrations (strike / seal) from our own content */}
+                <p className="mt-1 text-sm leading-relaxed text-slate-600 [&_.eg-seal]:mx-0.5 [&_.eg-seal]:inline-grid [&_.eg-seal]:h-6 [&_.eg-seal]:w-6 [&_.eg-seal]:-rotate-12 [&_.eg-seal]:place-items-center [&_.eg-seal]:rounded-full [&_.eg-seal]:border-2 [&_.eg-seal]:border-tide [&_.eg-seal]:align-middle [&_.eg-seal]:text-[9px] [&_.eg-seal]:font-bold [&_.eg-seal]:text-tide [&_.eg-strike]:text-coral [&_.eg-strike]:line-through" dangerouslySetInnerHTML={{ __html: body }} />
+              </li>
+            ))}
+          </ol>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href={`/exhibit/${slug}`} className="btn-dark !py-2">{g.preview}</Link>
+            <Link href="/join?intent=pilot" className="btn-outline !py-2">{q.useIt}</Link>
+          </div>
         </div>
-      </article>
-      <aside className="card h-fit text-center lg:sticky lg:top-20">
-        <p className="eyebrow">{g.qrEyebrow}</p>
-        <p className="mt-1 text-sm text-slate-600">{g.qrSub}</p>
-        <div className="mx-auto mt-4 w-44"><QrCode path={`/${lang}/exhibit/${slug}`} /></div>
-        <Link href={`/exhibit/${slug}`} className="btn-outline mt-4 !py-2">{g.preview}</Link>
-      </aside>
-    </div>
+      </section>
+
+      <div className="container-page grid gap-10 py-10 lg:grid-cols-[1fr_300px]">
+        <article>
+          <Link href={`/nodes/${slug}`} className="text-sm text-tide hover:underline">← {pick(node.name, lang)}</Link>
+          <h2 className="mt-3 text-2xl font-bold">{fmt(g.title, { node: pick(node.name, lang) })}</h2>
+          <p className="mt-2 text-sm text-slate-600">{g.sub}</p>
+          <div className="mt-8 space-y-10">
+            {CHAPTERS.map((ch, i) => (
+              <section key={ch.en}>
+                <h3 className="text-xl font-bold text-navy">{fmt(g.chapter, { n: i + 1 })}　{ch[lang]}</h3>
+                <p className="text-xs text-slate-500">{ch[other]}</p>
+                <div className="mt-3 space-y-2 leading-relaxed">
+                  {ch.ids.map((id) => {
+                    const e = get(id);
+                    return e ? (
+                      <p key={id}>
+                        {pick(e.description, lang)}
+                        <Cite id={id} node={slug} label={pick(e.label, lang)} lang={lang} />
+                      </p>
+                    ) : null;
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </article>
+        <aside className="card h-fit text-center lg:sticky lg:top-20">
+          <p className="eyebrow">{g.qrEyebrow}</p>
+          <p className="mt-1 text-sm text-slate-600">{g.qrSub}</p>
+          <div className="mx-auto mt-4 w-44"><QrCode path={`/${lang}/exhibit/${slug}`} /></div>
+          <Link href={`/exhibit/${slug}`} className="btn-outline mt-4 !py-2">{g.preview}</Link>
+        </aside>
+      </div>
+    </>
   );
 }

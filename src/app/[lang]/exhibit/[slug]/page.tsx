@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AskBox } from "@/components/ask/AskBox";
+import { WenGuide } from "@/components/guide/WenGuide";
 import { demoQuestions } from "@/data/xinwu";
 import { dataKey, locales, pick } from "@/i18n/config";
 import { getDict } from "@/i18n/server";
@@ -21,15 +22,19 @@ export default async function ExhibitPage({ params }: PageProps<"/[lang]/exhibit
   const node = await getNode(slug);
   if (!node || node.status !== "active") notFound();
   return (
-    <div className="min-h-[80vh] bg-sand/60">
-      <div className="mx-auto max-w-lg px-5 py-8">
-        <p className="eyebrow">{t.ask.exhibitEyebrow}</p>
-        <h1 className="mt-1 text-2xl font-bold">{pick(node.name, lang)}</h1>
-        <p className="mt-2 text-sm text-slate-600">{t.ask.exhibitSub}</p>
-        <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
-          <AskBox suggestions={demoQuestions[dataKey(lang)].slice(0, 3)} nodeSlug={slug} compact />
+    <>
+      {/* Exhibit kiosk: the guided 石塭問答 experience, then free questions */}
+      <WenGuide siteLang={lang} nodeSlug={slug} />
+      <div className="bg-sand/60">
+        <div className="mx-auto max-w-lg px-5 py-8">
+          <p className="eyebrow">{t.ask.exhibitEyebrow}</p>
+          <h1 className="mt-1 text-2xl font-bold">{pick(node.name, lang)}</h1>
+          <p className="mt-2 text-sm text-slate-600">{t.ask.exhibitSub}</p>
+          <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm">
+            <AskBox suggestions={demoQuestions[dataKey(lang)].slice(0, 3)} nodeSlug={slug} compact />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
