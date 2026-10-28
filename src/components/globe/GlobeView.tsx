@@ -104,16 +104,18 @@ export default function GlobeView({ nodes, links, selected, onSelect, lang }: Pr
           const active = n.status === "active";
           // Put the label on the left when a neighbouring active node would collide.
           const left = !active && nodes.some((o) => o.status === "active" && Math.hypot(o.display.lat - n.display.lat, o.display.lng - n.display.lng) < 4);
-          const el = document.createElement("button");
           const dot = active ? 14 : 10;
+          // The globe centres each HTML element on its coordinate, so the element itself is a
+          // zero-size anchor: the dot's centre sits exactly on the point, the label hangs beside it.
+          const el = document.createElement("button");
           el.type = "button";
           el.setAttribute("aria-label", pick(n.name, lang) || n.slug);
-          el.style.cssText = `pointer-events:auto;cursor:pointer;display:flex;flex-direction:${left ? "row-reverse" : "row"};align-items:center;gap:6px;transform:translate(${left ? `calc(-100% + ${dot / 2}px)` : `-${dot / 2}px`},-${dot / 2}px);background:none;border:0;padding:0;font:600 ${active ? 13 : 12}px var(--font-sans);color:${active ? "#fff" : "rgba(255,255,255,.75)"};white-space:nowrap;`;
+          el.style.cssText = "position:relative;width:0;height:0;padding:0;border:0;background:none;pointer-events:auto;cursor:pointer;overflow:visible;";
           const ring = document.createElement("span");
-          ring.style.cssText = `display:block;flex:none;width:${dot}px;height:${dot}px;border-radius:50%;background:${active ? "#e0785a" : "rgba(123,196,178,.25)"};border:2px solid ${active ? "#fff" : "#7bc4b2"};box-shadow:0 0 12px ${active ? "#e0785a" : "#7bc4b2"};`;
+          ring.style.cssText = `position:absolute;left:${-dot / 2}px;top:${-dot / 2}px;width:${dot}px;height:${dot}px;box-sizing:border-box;border-radius:50%;background:${active ? "#e0785a" : "rgba(123,196,178,.25)"};border:2px solid ${active ? "#fff" : "#7bc4b2"};box-shadow:0 0 12px ${active ? "#e0785a" : "#7bc4b2"};`;
           const label = document.createElement("span");
           label.textContent = pick(n.name, lang) || n.slug;
-          label.style.cssText = `text-shadow:0 1px 4px #000;${left ? "display:none;" : ""}`;
+          label.style.cssText = `position:absolute;top:-9px;${left ? `right:${dot / 2 + 5}px;` : `left:${dot / 2 + 5}px;`}white-space:nowrap;font:600 ${active ? 13 : 12}px var(--font-sans);line-height:18px;color:${active ? "#fff" : "rgba(255,255,255,.78)"};text-shadow:0 1px 4px #000;${left ? "display:none;" : ""}`;
           if (left) {
             el.title = pick(n.name, lang) || n.slug;
             el.onmouseenter = () => (label.style.display = "inline");

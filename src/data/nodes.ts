@@ -94,7 +94,7 @@ export const nodes: LocalNode[] = [
     type: "research",
     country: "ID",
     countryName: { "zh-Hant": "印尼", en: "Indonesia" },
-    display: { lat: -2.5, lng: 118.0 },
+    display: { lat: -0.79, lng: 113.92 },
     geoTier: "public",
     languages: ["id", "en"],
     summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
