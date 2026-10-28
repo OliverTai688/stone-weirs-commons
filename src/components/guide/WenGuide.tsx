@@ -15,20 +15,22 @@ import { QG } from "./wenQuick";
 
 type GuideLang = "zh" | "en" | "hak";
 
-const MARKUP = `
+const markup = (lang: "zh" | "en") => {
+  const g = QG[lang];
+  return `
 <div class="veil" id="wen-veil">
   <div>
-    <h1 id="wen-qgTitle"></h1>
-    <p class="lede" id="wen-veilP"></p>
-    <p class="who" style="margin-top:18px" id="wen-qgHow"></p>
-    <ol class="qg" id="wen-qg"></ol>
+    <h1 id="wen-qgTitle">${g.title}</h1>
+    <p class="lede" id="wen-veilP">${g.lede}</p>
+    <p class="who" style="margin-top:18px" id="wen-qgHow">${g.how}</p>
+    <ol class="qg" id="wen-qg">${g.steps.map(([b, s], i) => `<li><span class="n">${i + 1}</span><div><b>${b}</b><span>${s}</span></div></li>`).join("")}</ol>
     <div class="langs" role="radiogroup" aria-label="語言 Language" data-group="lang">
       <button class="opt" role="radio" data-v="zh" aria-checked="true">中文</button>
       <button class="opt" role="radio" data-v="en" aria-checked="false" tabindex="-1">English</button>
       <button class="opt" role="radio" data-v="hak" aria-checked="false" tabindex="-1">客語</button>
     </div>
-    <button class="go" id="wen-go"></button>
-    <p class="soundnote" id="wen-soundnote"></p>
+    <button class="go" id="wen-go">${g.go}</button>
+    <p class="soundnote" id="wen-soundnote">${g.sound}</p>
   </div>
 </div>
 <div class="page">
@@ -78,6 +80,7 @@ const MARKUP = `
     <p class="foot" id="wen-foot"></p>
   </section>
 </div>`;
+};
 
 export function WenGuide({ siteLang, nodeSlug = "xinwu" }: { siteLang: "zh" | "en"; nodeSlug?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -325,5 +328,5 @@ export function WenGuide({ siteLang, nodeSlug = "xinwu" }: { siteLang: "zh" | "e
     };
   }, [siteLang, nodeSlug]);
 
-  return <div ref={rootRef} className="wen qg-open" dangerouslySetInnerHTML={{ __html: MARKUP }} suppressHydrationWarning />;
+  return <div ref={rootRef} className="wen qg-open" dangerouslySetInnerHTML={{ __html: markup(siteLang) }} suppressHydrationWarning />;
 }
