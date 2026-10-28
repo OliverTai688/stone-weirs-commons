@@ -8,6 +8,28 @@
 
 ---
 
+## 步驟 0　歡迎信（網站自己寄，建議現在就做，約 3 分鐘）
+
+報名（網站的 Join 或海報上的 FormHug 表單）送出後，網站會立刻用你的 Gmail 寄出歡迎信。只要設定一次：
+
+1. 你的 Google 帳號需要已開啟**兩步驟驗證**。
+2. 到 https://myaccount.google.com/apppasswords 建立一組**應用程式密碼**（名稱可填 `stone-weirs-commons`），會得到 16 個字元的密碼。
+3. 到 Vercel → Project → Settings → Environment Variables 新增：
+   - `GMAIL_USER` = `taioliver688@gmail.com`
+   - `GMAIL_APP_PASSWORD` = 剛剛那組應用程式密碼（⚠️ 只貼在 Vercel，不要貼在聊天或程式碼裡）
+4. Deployments → 最新一筆 → **Redeploy**。
+5. 打開 `https://stone-weirs-commons.vercel.app/api/email/status`，看到 `{"provider":"gmail"}` 就完成了。
+
+運作方式：
+- FormHug 表單已設定 webhook：每筆新回覆會通知 `…/api/webhooks/formhug`，網站收到就寄信。
+- 網站的 Join 表單送出時呼叫 `/api/join`，同樣立刻寄信（依介面語言寄中文或英文）。
+- 寄出的信會出現在你 Gmail 的「寄件備份」，回信會回到你的信箱。
+- 防濫用：同一個信箱 24 小時內只寄一次、每小時最多 60 封（`EMAIL_HOURLY_CAP`）；信中只使用表單的固定選項，不放填寫者自己打的文字。
+- Gmail 一般帳號每天約可寄 500 封，會議期間足夠。之後有自己的網域，可改用 Resend（`RESEND_API_KEY`、`EMAIL_FROM`）。
+- 想再加一層保護：自行設定 `FORMHUG_WEBHOOK_SECRET`，並在 FormHug 的 webhook 網址後面加上 `?key=同一串值`。
+
+---
+
 ## 步驟 1　Vercel 測試部署（5 分鐘，現在就可以做）
 
 1. 到 https://vercel.com/new ，用 GitHub 登入，Import `OliverTai688/stone-weirs-commons`。

@@ -31,7 +31,7 @@ export default async function JoinPage(props: PageProps<"/[lang]/join">) {
 
 async function JoinInner({ searchParams }: PageProps<"/[lang]/join">) {
   const sp = await searchParams;
-  const next = typeof sp.next === "string" && sp.next.startsWith("/") ? sp.next : "/tools/interview";
+  const next = typeof sp.next === "string" && sp.next.startsWith("/") ? sp.next : "/welcome";
   const source = typeof sp.utm_source === "string" ? sp.utm_source : "direct";
   return <JoinForm next={next} source={source} />;
 }

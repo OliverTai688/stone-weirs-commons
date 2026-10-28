@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useI18n } from "@/i18n/client";
+import { useApi, useI18n } from "@/i18n/client";
 import { intlLocale } from "@/i18n/config";
 import type { Profile } from "@/lib/types";
 
@@ -16,6 +16,8 @@ export function JoinForm({ next, source }: { next: string; source: string }) {
   const { t, lang, path } = useI18n();
   const j = t.join;
   const router = useRouter();
+  const api = useApi();
+  const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<"login" | "form">("login");
   const [f, setF] = useState({ fullName: "", email: "", persona: "researcher", country: "TW", organization: "", privacy: false, contact: false });
   const set = (k: string, v: string | boolean) => setF((x) => ({ ...x, [k]: v }));
@@ -24,9 +26,10 @@ export function JoinForm({ next, source }: { next: string; source: string }) {
     return [...COUNTRY_CODES.map((c) => [c, dn.of(c) ?? c] as const), ["OTHER", j.otherCountry] as const];
   }, [lang, j.otherCountry]);
 
-  function submit(ev: React.FormEvent) {
+  async function submit(ev: React.FormEvent) {
     ev.preventDefault();
-    if (!f.privacy) return;
+    if (!f.privacy || busy) return;
+    setBusy(true);
     const p: Profile = {
       id: crypto.randomUUID(), fullName: f.fullName, email: f.email, persona: f.persona as Profile["persona"], country: f.country,
       organization: f.organization || undefined, interests: [], contactConsent: f.contact, signupSource: source, createdAt: new Date().toISOString().slice(0, 10),
@@ -36,6 +39,8 @@ export function JoinForm({ next, source }: { next: string; source: string }) {
       localStorage.setItem("demo_profiles", JSON.stringify([...list, p]));
       localStorage.setItem("demo_session", JSON.stringify({ id: p.id, name: p.fullName }));
     } catch {}
+    // Registering sends the welcome email from the site (BFF).
+    await api("/api/join", { method: "POST", body: JSON.stringify({ fullName: f.fullName, email: f.email, privacy: f.privacy, contact: f.contact, lang, source }) }).catch(() => null);
     router.push(path(next));
   }
 
@@ -71,7 +76,7 @@ export function JoinForm({ next, source }: { next: string; source: string }) {
       <p className="rounded-xl bg-foam p-3 text-xs leading-relaxed text-slate-700">{j.privacyText}</p>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={f.privacy} onChange={(e) => set("privacy", e.target.checked)} className="mt-1" required />{j.privacyCheck}</label>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={f.contact} onChange={(e) => set("contact", e.target.checked)} className="mt-1" />{j.contactCheck}</label>
-      <button className="btn-primary w-full" disabled={!f.privacy}>{j.submit}</button>
+      <button className="btn-primary w-full" disabled={!f.privacy || busy}>{busy ? t.common.loading : j.submit}</button>
     </form>
   );
 }

@@ -1,7 +1,8 @@
 # APCONF6 pilot — welcome email template
 
-Used for every new sign-up on the FormHug form (formhug.ai/f/SMbOkH).
-A scheduled task creates one Gmail **draft** per new entry; Yu-Hsin reviews and sends.
+Sent automatically **by the site** (`src/server/email/welcome.ts`) for every sign-up:
+FormHug form (formhug.ai/f/SMbOkH) → webhook → `/api/webhooks/formhug`, and the site's own Join → `/api/join`.
+The code is the source of truth; this file describes the content. See SETUP.md step 0 for the Gmail app password.
 
 - **To:** the respondent's email (field_2)
 - **Subject:** Welcome to the Stone Weirs, Shared Futures pilot — how to get started
@@ -12,10 +13,7 @@ Dear {first name},
 
 Thank you for signing up at APCONF6 as a co-creator for Stone Weirs, Shared Futures.
 
-{ONE personalised sentence, only from what they wrote in the form. Examples:
- - If they named a collection or story (field_7): "I'd love to hear more about {their collection/story} — it sounds like a good fit for the pilot."
- - Else if they chose a tool (field_5): "You mentioned an interest in {tool, in plain words}, so I've put the most relevant link first below."
- - Otherwise omit this sentence.}
+{One sentence chosen from the fixed options they ticked in field_5 (Tool 1 / Tool 2 / governance). Free-text answers are never copied into the email, so the public form can't be used to send arbitrary text.}
 
 You can try both tools today, no account needed (about 5 minutes):
 

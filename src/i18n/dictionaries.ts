@@ -270,10 +270,10 @@ const en = {
   welcome: {
     eyebrow: "APCONF6 · Pilot round",
     title: "You're in. Welcome to the pilot round.",
-    sub: "Thank you for signing up as a co-creator. We'll email you within a day with how to take part — in the meantime, everything below already works.",
+    sub: "Thank you for signing up as a co-creator — you're registered. We're sending you a welcome email with these steps (if it isn't there in a few minutes, check your spam folder). Everything below already works.",
     nextTitle: "What happens next",
     next: [
-      ["Within a day", "A welcome email from Yu-Hsin TAI with these steps and a link back here."],
+      ["Now", "A welcome email from Yu-Hsin TAI with these steps and a link back here."],
       ["30 October 2026", "First version demonstrated at APCONF6 in Bali. Come and see both tools live."],
       ["After APCONF6", "Pilot round opens: sign in with Google, create your own local node, and bring one story or collection."],
     ],
@@ -571,10 +571,10 @@ const zh: Dict = {
   welcome: {
     eyebrow: "APCONF6・Pilot 招募",
     title: "報名成功，歡迎加入 pilot！",
-    sub: "謝謝你成為共創夥伴。我們會在一天內寄信告訴你怎麼參與；在那之前，下面這些功能都已經可以使用。",
+    sub: "謝謝你成為共創夥伴，報名已完成。我們正在寄一封歡迎信給你，裡面有下面這些步驟（幾分鐘內沒收到的話，請看一下垃圾郵件匣）。下面的功能現在都可以使用。",
     nextTitle: "接下來會發生什麼",
     next: [
-      ["一天內", "Yu-Hsin TAI 會寄一封歡迎信給你，附上這些步驟與回到這裡的連結。"],
+      ["現在", "Yu-Hsin TAI 寄出的歡迎信，附上這些步驟與回到這裡的連結。"],
       ["2026 年 10 月 30 日", "在峇里島的 APCONF6 現場展示第一版，歡迎來看兩個工具的實際操作。"],
       ["APCONF6 之後", "Pilot 正式開始：用 Google 登入、建立你的在地節點，帶一則故事或一批收藏來試。"],
     ],
