@@ -43,7 +43,7 @@ export default async function GuidePage({ params }: PageProps<"/[lang]/nodes/[sl
       {/* Tool 2 in action: the 石塭問答 guide, opening with a quick guide */}
       <WenGuide siteLang={lang} nodeSlug={slug} />
 
-      <section className="border-y border-slate-200 bg-white py-12">
+      <section id="how-it-works" className="scroll-mt-20 border-y border-slate-200 bg-white py-12">
         <div className="container-page">
           <p className="eyebrow">{g.eyebrow}</p>
           <h2 className="mt-1 text-2xl font-bold">{q.how}</h2>
