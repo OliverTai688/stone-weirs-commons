@@ -9,8 +9,9 @@
 -- The browser never talks to Supabase directly: every query goes through the Next.js BFF,
 -- which scopes by session + tenant. RLS below is defence in depth, not the only gate.
 
-create extension if not exists vector;
-create extension if not exists postgis;
+-- Supabase recommends installing extensions in the `extensions` schema (already on the search path).
+create extension if not exists vector with schema extensions;
+create extension if not exists postgis with schema extensions;
 
 -- ───────────────────────── Members & contact ─────────────────────────
 create type persona as enum ('researcher','museum','community','student','other');
@@ -47,7 +48,8 @@ create table public.consents (
   created_at timestamptz not null default now()
 );
 -- Latest state per user & type
-create view public.current_consents as
+-- security_invoker: the view applies the caller's RLS (Supabase views otherwise run as the owner and bypass RLS).
+create view public.current_consents with (security_invoker = true) as
   select distinct on (user_id, consent_type) user_id, consent_type, granted, policy_version, created_at
   from public.consents order by user_id, consent_type, created_at desc;
 
@@ -141,7 +143,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- Public globe view: no precise geometry.
-create view public.nodes_public as
+create view public.nodes_public with (security_invoker = true) as
   select id, slug, name, type, country, display_lat, display_lng, geo_tier, languages, summary, tags, status
   from public.nodes where status in ('active','invited');
 
