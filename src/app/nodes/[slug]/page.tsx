@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { crmMeta, crmOrder } from "@/lib/crm";
-import { getNode, listEntities, listNodes } from "@/lib/repo";
+import { getNode, listEntities, listNodes } from "@/server/repo";
 
 export async function generateStaticParams() {
   return (await listNodes()).map((n) => ({ slug: n.slug }));

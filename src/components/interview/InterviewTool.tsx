@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { engineLabel } from "@/components/ask/AskBox";
 import { ConceptGraph } from "@/components/graph/ConceptGraph";
 import { crmMeta } from "@/lib/crm";
 import { demoScript, emptyState, facetLabels, openingQuestion, type Facet, type InterviewState, type Turn } from "@/lib/interview";
@@ -12,7 +13,8 @@ export function InterviewTool() {
   const [state, setState] = useState<InterviewState>(emptyState());
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<"llm" | "demo" | null>(null);
+  const [engine, setEngine] = useState<Parameters<typeof engineLabel>[0] | null>(null);
+  const [aiError, setAiError] = useState<string | undefined>();
   const [sel, setSel] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const chatEnd = useRef<HTMLDivElement>(null);
@@ -35,9 +37,10 @@ export function InterviewTool() {
     setInput("");
     try {
       const res = await fetch("/api/interview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ turns: next, state: stateRef.current, lang }) });
-      const data = (await res.json()) as { state: InterviewState; question: string; mode: "llm" | "demo" };
+      const data = (await res.json()) as { state: InterviewState; question: string; engine: Parameters<typeof engineLabel>[0]; aiError?: string };
       setState(data.state);
-      setMode(data.mode);
+      setEngine(data.engine);
+      setAiError(data.aiError);
       setTurns([...next, { role: "ai", content: data.question }]);
     } catch {
       setTurns([...next, { role: "ai", content: lang === "zh" ? "連線失敗，請再試一次。" : "Connection failed, please retry." }]);
@@ -98,7 +101,11 @@ export function InterviewTool() {
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <div>
             <p className="text-sm font-bold">AI 半結構訪談</p>
-            <p className="text-xs text-slate-500">{mode === "llm" ? "AI 模型" : mode === "demo" ? "示範引擎（尚未接上 AI 金鑰）" : "準備好了"}</p>
+            <p className="text-xs text-slate-500">
+              {engine ? engineLabel(engine) : "準備好了"}
+              {(!engine || engine.kind === "demo") && <> ・<Link href="/settings/ai" className="text-tide hover:underline">加入你的 AI 金鑰</Link></>}
+            </p>
+            {aiError && <p className="text-xs text-amber-700">{aiError}</p>}
           </div>
           <select value={lang} onChange={(ev) => { setLang(ev.target.value as "zh" | "en"); }} className="rounded-lg border border-slate-200 px-2 py-1 text-xs" aria-label="訪談語言">
             <option value="zh">中文</option>

@@ -1,5 +1,13 @@
 -- Stone Weirs, Shared Futures — initial schema (single production project).
 -- Run once in Supabase → SQL Editor. Safe to read top to bottom; no data is deleted.
+--
+-- Multi-tenant model (see ARCHITECTURE.md):
+--   tenant  = a local node (public.nodes). Membership via public.node_members (steward | contributor).
+--   private = drafts, interview turns, AI keys, Q&A logs → visible to their owner only.
+--   review  = items submitted for review → also visible to that node's stewards.
+--   public  = approved records of active nodes → visible to everyone (globe, guides, exhibits).
+-- The browser never talks to Supabase directly: every query goes through the Next.js BFF,
+-- which scopes by session + tenant. RLS below is defence in depth, not the only gate.
 
 create extension if not exists vector;
 create extension if not exists postgis;
@@ -219,6 +227,22 @@ create table public.qa_logs (
   created_at timestamptz not null default now()
 );
 
+-- ───────────────────────── Bring-your-own AI keys ─────────────────────────
+-- Ciphertext only (AES-256-GCM, key = APP_ENCRYPTION_KEY, held by the BFF). RLS is enabled with
+-- NO policies: no client role can read or write this table; only the server (service role) can.
+create table public.user_ai_keys (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  provider text not null check (provider in ('anthropic','openai')),
+  ciphertext text not null,
+  last4 text not null,
+  model text not null,
+  is_preferred boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, provider)
+);
+create unique index one_preferred_key on public.user_ai_keys (user_id) where is_preferred;
+
 -- ───────────────────────── Row Level Security ─────────────────────────
 alter table public.profiles enable row level security;
 alter table public.consents enable row level security;
@@ -234,6 +258,7 @@ alter table public.entities enable row level security;
 alter table public.relations enable row level security;
 alter table public.entity_embeddings enable row level security;
 alter table public.qa_logs enable row level security;
+alter table public.user_ai_keys enable row level security;
 
 -- profiles: you see yourself; admins see everyone. (Directory uses a separate view later.)
 create policy "own profile read" on public.profiles for select using (id = auth.uid() or public.is_admin());
@@ -263,12 +288,16 @@ create policy "admin insert" on public.audit_logs for insert with check (public.
 create policy "public nodes" on public.nodes for select using (status in ('active','invited') or created_by = auth.uid() or public.is_admin() or public.is_member_of(id));
 create policy "create node" on public.nodes for insert with check (created_by = auth.uid() and status = 'draft');
 create policy "steward edits node" on public.nodes for update using (public.is_steward(id) or public.is_admin());
-create policy "members visible to node" on public.node_members for select using (public.is_member_of(node_id) or public.is_admin());
+create policy "own memberships and stewards" on public.node_members for select using (user_id = auth.uid() or public.is_steward(node_id) or public.is_admin());
 create policy "steward manages members" on public.node_members for all using (public.is_steward(node_id) or public.is_admin()) with check (public.is_steward(node_id) or public.is_admin());
 create policy "links public" on public.node_links for select using (true);
 
 -- stories & turns: node members
-create policy "node members read stories" on public.stories for select using (status = 'approved' or public.is_member_of(node_id) or public.is_admin());
+create policy "stories: owner, reviewing steward, or approved" on public.stories for select using (
+  status = 'approved'
+  or created_by = auth.uid()
+  or (status in ('in_review','withdrawn') and public.is_steward(node_id))
+  or public.is_admin());
 create policy "members write stories" on public.stories for insert with check (public.is_member_of(node_id) and created_by = auth.uid());
 create policy "author or steward update story" on public.stories for update using (created_by = auth.uid() or public.is_steward(node_id));
 create policy "turns with story" on public.interview_turns for all
@@ -276,11 +305,21 @@ create policy "turns with story" on public.interview_turns for all
   with check (exists (select 1 from public.stories s where s.id = story_id and s.created_by = auth.uid()));
 
 -- entities: approved ones are public; drafts visible to node members; only stewards approve.
-create policy "approved entities public" on public.entities for select using (status = 'approved' or public.is_member_of(node_id) or public.is_admin());
-create policy "members draft entities" on public.entities for insert with check (public.is_member_of(node_id) and status in ('draft','in_review'));
+create policy "entities: owner, reviewing steward, or approved" on public.entities for select using (
+  status = 'approved'
+  or created_by = auth.uid()
+  or (status in ('in_review','withdrawn') and public.is_steward(node_id))
+  or public.is_admin());
+create policy "members draft entities" on public.entities for insert with check (public.is_member_of(node_id) and created_by = auth.uid() and status in ('draft','in_review'));
+create policy "owner edits own draft" on public.entities for update using (created_by = auth.uid() and status = 'draft') with check (created_by = auth.uid() and status in ('draft','in_review'));
 create policy "steward governs entities" on public.entities for update using (public.is_steward(node_id)) with check (public.is_steward(node_id));
-create policy "relations follow entities" on public.relations for select using (true);
-create policy "members write relations" on public.relations for all using (public.is_member_of(node_id)) with check (public.is_member_of(node_id));
+-- A relation is visible only if both ends are visible to the caller (RLS on entities applies inside the subquery).
+create policy "relations follow entities" on public.relations for select using (
+  exists (select 1 from public.entities e where e.id = from_entity)
+  and exists (select 1 from public.entities e where e.id = to_entity));
+create policy "members write relations" on public.relations for insert with check (
+  public.is_member_of(node_id) and exists (select 1 from public.entities e where e.id = from_entity and e.created_by = auth.uid()));
+create policy "steward manages relations" on public.relations for update using (public.is_steward(node_id)) with check (public.is_steward(node_id));
 
 -- embeddings & logs: server only (service role bypasses RLS); nothing for anon.
 create policy "own qa logs" on public.qa_logs for select using (user_id = auth.uid() or public.is_admin());

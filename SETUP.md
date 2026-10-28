@@ -14,6 +14,8 @@
 2. Framework 會自動偵測為 Next.js，其他設定不用改，按 **Deploy**。
 3. 部署完成後，到 Project → Settings → Environment Variables 新增：
    - `NEXT_PUBLIC_SITE_URL` = 你的 Vercel 網址（例如 `https://stone-weirs-commons.vercel.app`），QR code 會用這個網址。
+   - `APP_ENCRYPTION_KEY` = 一串隨機字串，用來加密使用者自己的 AI 金鑰。在終端機執行 `openssl rand -base64 48` 產生，貼上後**不要再更換**（更換會讓已儲存的金鑰失效）。沒設定的話，「AI 設定」頁會顯示無法儲存。
+   - 設定完到 Deployments → 最新一筆 → Redeploy，環境變數才會生效。
 4. 之後每次推送到 GitHub，Vercel 都會自動產生新的部署：`main` 分支是正式網址，其他分支會有預覽網址。
 
 **要給 Claude 的：** Vercel 網址。
@@ -71,9 +73,11 @@
 
 ---
 
-## 選用：AI 金鑰
+## AI 金鑰：使用者自己帶
 
-設定 `ANTHROPIC_API_KEY` 後，AI 問答與訪談會從示範引擎切換成真正的模型；伺服器仍會檢查每個引用都來自檢索到的紀錄，不符合就退回「資料不足」。沒有設定也能 demo。
+每位使用者可以在網站的 **AI 設定**（`/settings/ai`）加入自己的 Anthropic 或 OpenAI 金鑰，費用算在他們自己的帳戶。
+平台本身不需要 AI 金鑰；如果你想讓沒有金鑰的人也能用真正的模型，可以選擇性設定 `ANTHROPIC_API_KEY`（費用算你的）。
+架構細節見 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 
 ---
 

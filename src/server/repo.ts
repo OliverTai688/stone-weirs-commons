@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * Data access layer.
  *
@@ -7,7 +8,7 @@
  */
 import { nodes, nodeLinks, getNode as seedGetNode, demoProfiles } from "@/data/nodes";
 import { xinwuEntities, xinwuRelations } from "@/data/xinwu";
-import type { Entity, LocalNode, NodeLink, Profile, Relation } from "./types";
+import type { Entity, LocalNode, NodeLink, Profile, Relation } from "@/lib/types";
 
 export async function listNodes(): Promise<LocalNode[]> {
   return nodes;

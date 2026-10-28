@@ -6,6 +6,9 @@
 - **工具一** `/tools/interview`：AI 半結構訪談 → CIDOC-CRM 概念圖（每個節點連回原話）
 - **工具二** `/ask`、`/nodes/xinwu/guide`、`/exhibit/xinwu`：只根據治理紀錄回答、強制引用的問答、導覽與展場 QR
 - **後台** `/admin`：研究者聯絡名單（只匯出同意聯絡者）
+- **AI 設定** `/settings/ai`：使用者自帶 Anthropic / OpenAI 金鑰（加密儲存、只經由 BFF 使用）
+
+架構（多租戶、BFF、BYOK）見 [ARCHITECTURE.md](./ARCHITECTURE.md)。
 
 ## 開發
 
@@ -22,8 +25,9 @@ npm run build
 | 路徑 | 說明 |
 |---|---|
 | `src/data/` | 示範資料：僅使用論文中出現的事實；邀請中節點不含任何內容 |
-| `src/lib/repo.ts` | 資料存取層（之後換成 Supabase，頁面不需改動） |
-| `src/lib/qa.ts` | 治理檢索問答：只檢索已審核且非限制級紀錄、引用驗證、地理隱私防護 |
+| `src/server/` | BFF 伺服器層（server-only）：session、repo、qa、AI 供應商、加密 |
+| `src/server/repo.ts` | 資料存取層（之後換成 Supabase，頁面不需改動） |
+| `src/server/qa.ts` | 治理檢索問答：只檢索已審核且非限制級紀錄、引用驗證、地理隱私防護 |
 | `src/lib/interview.ts` | 工具一的訪談面向、示範抽取器與 LLM 提示 |
 | `supabase/schema.sql` | 資料表與 RLS 權限（單一正式資料庫） |
 

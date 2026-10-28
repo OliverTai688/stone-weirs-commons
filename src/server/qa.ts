@@ -1,7 +1,8 @@
+import "server-only";
 import { baselineAnswers } from "@/data/xinwu";
 import { listIndexableEntities, listEntities } from "./repo";
-import { callClaude, llmEnabled } from "./llm";
-import type { Entity } from "./types";
+import { engineOf, type AiClient, type EngineInfo } from "./ai/llm";
+import type { Entity } from "@/lib/types";
 
 export interface Citation {
   id: string;
@@ -13,6 +14,8 @@ export interface QaResult {
   citations: Citation[];
   grounded: boolean;
   mode: "llm" | "demo";
+  engine: EngineInfo;
+  aiError?: string;
   baseline?: { answer: string; error: string };
   guard?: string;
 }
@@ -70,7 +73,9 @@ export async function retrieve(question: string, nodeSlugs?: string[], k = 4) {
 
 const LOCATION_RE = /(精確|座標|經緯度|gps|exact location|coordinates|在哪裡.*石滬|石滬.*在哪)/i;
 
-export async function answer(question: string, opts: { nodeSlugs?: string[]; lang?: "zh-Hant" | "en" } = {}): Promise<QaResult> {
+export async function answer(question: string, opts: { nodeSlugs?: string[]; lang?: "zh-Hant" | "en"; ai?: AiClient | null } = {}): Promise<QaResult> {
+  const ai = opts.ai ?? null;
+  const demo = engineOf(null);
   const lang = opts.lang ?? (/[一-鿿]/.test(question) ? "zh-Hant" : "en");
   const baselineHit = baselineAnswers.find((b) => b.match.some((m) => norm(question).includes(norm(m))));
   const baseline = baselineHit ? { answer: baselineHit.answer, error: baselineHit.error } : undefined;
@@ -90,7 +95,7 @@ export async function answer(question: string, opts: { nodeSlugs?: string[]; lan
   if (guard) hits = [];
   // Answer-type check for the demo engine: a record that merely mentions the topic
   // is not an answer. Count / quantity questions need a number; date questions need a year.
-  if (!llmEnabled()) {
+  if (!ai) {
     const text = (e: Entity) => `${e.description["zh-Hant"]}${e.description.en}`;
     if (/(幾座|幾個|多少|how many)/i.test(question)) hits = hits.filter((e) => /\d+\s*(座|個|處)/.test(text(e)));
     if (/(哪一年|何時|什麼時候|when|what year)/i.test(question)) hits = hits.filter((e) => /\d{3,4}\s*年|\b\d{4}\b/.test(text(e)));
@@ -107,12 +112,14 @@ export async function answer(question: string, opts: { nodeSlugs?: string[]; lan
       citations: guard ? [{ id: "X-PL-XINWU", nodeSlug: "xinwu", label: "桃園市新屋區" }] : [],
       grounded: Boolean(guard),
       mode: "demo",
+      engine: demo,
       baseline,
       guard,
     };
   }
 
-  if (llmEnabled()) {
+  let aiError: string | undefined;
+  if (ai) {
     try {
       const context = hits
         .map((e) => `[${e.id}] (${e.crmClass}) ${e.label["zh-Hant"]} / ${e.label.en}\n${e.description["zh-Hant"]}\n${e.description.en}`)
@@ -124,16 +131,16 @@ Rules:
 - Keep local-language terms (e.g. Hakka 石塭) verbatim.
 - Never reveal precise coordinates.
 - Answer in ${lang === "zh-Hant" ? "Traditional Chinese" : "English"}, in 1-4 sentences.`;
-      const text = await callClaude(system, [{ role: "user", content: `Records:\n${context}\n\nQuestion: ${question}` }], 500);
+      const text = await ai.chat(system, [{ role: "user", content: `Records:\n${context}\n\nQuestion: ${question}` }], 500);
       const cited = [...text.matchAll(/\[([A-Z0-9-]+)\]/g)].map((m) => m[1]);
       const allowed = new Set(hits.map((h) => h.id));
       const valid = cited.length > 0 && cited.every((c) => allowed.has(c));
       if (valid) {
-        return { answer: guard ? `${guard}\n\n${text}` : text, citations: citations.filter((c) => cited.includes(c.id)), grounded: true, mode: "llm", baseline, guard };
+        return { answer: guard ? `${guard}\n\n${text}` : text, citations: citations.filter((c) => cited.includes(c.id)), grounded: true, mode: "llm", engine: engineOf(ai), baseline, guard };
       }
-      // fall through to deterministic answer if citations fail validation
+      aiError = "AI 回答的引用未通過驗證，改用示範引擎的結果。";
     } catch (err) {
-      console.error(err);
+      aiError = describeAiError(err);
     }
   }
 
@@ -141,5 +148,13 @@ Rules:
     .slice(0, 2)
     .map((e) => `${e.description[lang] ?? e.description["zh-Hant"]}［新屋・${e.id}］`)
     .join("\n\n");
-  return { answer: guard ? `${guard}\n\n${body}` : body, citations: citations.slice(0, 2), grounded: true, mode: "demo", baseline, guard };
+  return { answer: guard ? `${guard}\n\n${body}` : body, citations: citations.slice(0, 2), grounded: true, mode: "demo", engine: demo, aiError, baseline, guard };
+}
+
+export function describeAiError(err: unknown): string {
+  const status = (err as { status?: number })?.status;
+  if (status === 401 || status === 403) return "你的 AI 金鑰無效或沒有權限，請到「AI 設定」檢查。已改用示範引擎。";
+  if (status === 429) return "你的 AI 金鑰達到用量或速率上限。已改用示範引擎。";
+  if (status === 404 || status === 400) return "所選的模型無法使用，請到「AI 設定」換一個模型。已改用示範引擎。";
+  return "AI 服務暫時無法連線，已改用示範引擎。";
 }

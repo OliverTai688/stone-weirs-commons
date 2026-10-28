@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { HomeGlobe } from "@/components/globe/HomeGlobe";
-import { listNodeLinks, listNodes, stats } from "@/lib/repo";
+import { listNodeLinks, listNodes, stats } from "@/server/repo";
 
 export default async function Home() {
   const [nodes, links, s] = await Promise.all([listNodes(), listNodeLinks(), stats()]);

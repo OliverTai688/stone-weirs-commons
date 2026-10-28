@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AskBox } from "@/components/ask/AskBox";
 import { demoQuestions } from "@/data/xinwu";
-import { getNode, listNodes } from "@/lib/repo";
+import { getNode, listNodes } from "@/server/repo";
 
 export const metadata = { title: "展場導覽問答" };
 

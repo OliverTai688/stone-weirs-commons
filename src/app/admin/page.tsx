@@ -1,5 +1,5 @@
 import { AdminContacts } from "@/components/auth/AdminContacts";
-import { listProfiles } from "@/lib/repo";
+import { listProfiles } from "@/server/repo";
 
 export const metadata = { title: "後台：研究者名單", robots: { index: false } };
 

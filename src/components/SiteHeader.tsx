@@ -5,6 +5,7 @@ const links = [
   { href: "/tools/interview", label: "工具一：故事轉概念圖" },
   { href: "/ask", label: "工具二：問 AI" },
   { href: "/governance", label: "資料治理" },
+  { href: "/settings/ai", label: "AI 設定" },
 ];
 
 export function SiteHeader() {

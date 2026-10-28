@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GraphExplorer } from "@/components/graph/GraphExplorer";
-import { getNode, listEntities, listNodes, listRelations } from "@/lib/repo";
+import { getNode, listEntities, listNodes, listRelations } from "@/server/repo";
 
 export const metadata = { title: "概念圖" };
 

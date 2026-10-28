@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Cite } from "@/components/Cite";
 import { QrCode } from "@/components/QrCode";
-import { getNode, listEntities, listNodes } from "@/lib/repo";
+import { getNode, listEntities, listNodes } from "@/server/repo";
 
 export const metadata = { title: "導覽敘事" };
 

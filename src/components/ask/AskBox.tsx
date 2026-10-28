@@ -9,6 +9,8 @@ interface Result {
   citations: Citation[];
   grounded: boolean;
   mode: "llm" | "demo";
+  engine?: { kind: "demo" } | { kind: "llm"; provider: string; model: string; source: "user" | "platform" };
+  aiError?: string;
   baseline?: { answer: string; error: string };
 }
 interface Item { q: string; r?: Result; err?: string }
@@ -105,7 +107,7 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
                 )}
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                   <p className="text-xs font-bold text-emerald-700">
-                    石滬・共享未來（治理檢索）{it.r.mode === "demo" && <span className="ml-1 font-normal text-slate-500">・示範引擎</span>}
+                    石滬・共享未來（治理檢索）<span className="ml-1 font-normal text-slate-500">・{engineLabel(it.r.engine)}</span>
                   </p>
                   <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{it.r.answer}</p>
                   {it.r.citations.length > 0 && (
@@ -117,6 +119,7 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
                       ))}
                     </div>
                   )}
+                  {it.r.aiError && <p className="mt-2 text-xs text-amber-700">{it.r.aiError}</p>}
                   {!it.r.grounded && <p className="mt-2 text-xs text-slate-500">資料不足時，AI 會直接說不知道，而不是編造。</p>}
                 </div>
               </div>
@@ -130,4 +133,10 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
 
 function safeGet(k: string) {
   try { return localStorage.getItem(k); } catch { return null; }
+}
+
+export function engineLabel(e?: Result["engine"]) {
+  if (!e || e.kind === "demo") return "示範引擎";
+  const name = e.provider === "anthropic" ? "Anthropic" : "OpenAI";
+  return `${name} ${e.model}${e.source === "user" ? "（你的金鑰）" : "（平台）"}`;
 }
