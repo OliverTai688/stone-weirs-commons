@@ -14,7 +14,7 @@ const en = {
     title: "Stone Weirs, Shared Futures",
     description: "An Asia-Pacific commons for maritime cultural heritage. Tell your story — AI keeps the context: sourced, consented, community-held.",
   },
-  nav: { node: "Xinwu node", tool1: "Tool 1: Story → Concept map", tool2: "Tool 2: Ask AI", governance: "Data governance", ai: "AI settings", join: "Join the network" },
+  nav: { node: "Xinwu node", tool1: "Tool 1: Story → Concept map", tool2: "Tool 2: Ask AI", governance: "Data governance", ai: "AI settings", join: "Join the network", joinShort: "Join" },
   home: {
     eyebrow: "Stone Weirs, Shared Futures · Pilot",
     title: "Put your shore on the map",
@@ -267,6 +267,27 @@ const en = {
     ],
     note: "TRL-3 pilot: one published narrative, a single rater, 24 items. A user study and multi-node expansion are next — which is why we're inviting you.",
   },
+  welcome: {
+    eyebrow: "APCONF6 · Pilot round",
+    title: "You're in. Welcome to the pilot round.",
+    sub: "Thank you for signing up as a co-creator. We'll email you within a day with how to take part — in the meantime, everything below already works.",
+    nextTitle: "What happens next",
+    next: [
+      ["Within a day", "A welcome email from Yu-Hsin TAI with these steps and a link back here."],
+      ["30 October 2026", "First version demonstrated at APCONF6 in Bali. Come and see both tools live."],
+      ["After APCONF6", "Pilot round opens: sign in with Google, create your own local node, and bring one story or collection."],
+    ],
+    startTitle: "Try it now — about 5 minutes",
+    steps: [
+      ["Ask the AI about Xinwu", "Ask a question and compare it with the ungoverned AI answers recorded in the paper. Every answer cites a governed record.", "/ask", "Ask AI →"],
+      ["Play the demo interview", "Watch Tool 1 turn a short story into a CIDOC-CRM concept map, sentence by sentence.", "/tools/interview", "Open Tool 1 →"],
+      ["Explore the concept map", "Click through the Xinwu records: sources, consent status and geo-privacy for every node.", "/nodes/xinwu", "Open the map →"],
+    ],
+    keyTitle: "Optional: use your own AI",
+    keyBody: "Add an Anthropic or OpenAI key in AI settings and both tools switch from the demo engine to the model you choose.",
+    keyCta: "AI settings",
+    contact: "Questions or a collection you'd like to try? Write to taioliver688@gmail.com.",
+  },
   crm: { E39: "Actor", E53: "Place", E5: "Event", E22: "Human-Made Object", E18: "Physical Thing", E73: "Information Object" },
   geoTier: {
     public: ["Public", "District or infrastructure level, publishable"],
@@ -294,7 +315,7 @@ const zh: Dict = {
     title: "石滬・共享未來",
     description: "亞太海洋文化遺產交流平台：把你的故事說出來，AI 幫你留下完整的脈絡。",
   },
-  nav: { node: "新屋節點", tool1: "工具一：故事轉概念圖", tool2: "工具二：問 AI", governance: "資料治理", ai: "AI 設定", join: "加入網絡" },
+  nav: { node: "新屋節點", tool1: "工具一：故事轉概念圖", tool2: "工具二：問 AI", governance: "資料治理", ai: "AI 設定", join: "加入網絡", joinShort: "加入" },
   home: {
     eyebrow: "Stone Weirs, Shared Futures・Pilot",
     title: "把你的海岸放上地圖",
@@ -546,6 +567,27 @@ const zh: Dict = {
       ["6／6", "客語詞彙精確度", "石塭、流水來等在地詞彙完整保留"],
     ],
     note: "TRL-3 pilot：單一已出版敘事、單一評分者、24 題。使用者研究與多節點擴充是下一步，也是我們邀請你加入的原因。",
+  },
+  welcome: {
+    eyebrow: "APCONF6・Pilot 招募",
+    title: "報名成功，歡迎加入 pilot！",
+    sub: "謝謝你成為共創夥伴。我們會在一天內寄信告訴你怎麼參與；在那之前，下面這些功能都已經可以使用。",
+    nextTitle: "接下來會發生什麼",
+    next: [
+      ["一天內", "Yu-Hsin TAI 會寄一封歡迎信給你，附上這些步驟與回到這裡的連結。"],
+      ["2026 年 10 月 30 日", "在峇里島的 APCONF6 現場展示第一版，歡迎來看兩個工具的實際操作。"],
+      ["APCONF6 之後", "Pilot 正式開始：用 Google 登入、建立你的在地節點，帶一則故事或一批收藏來試。"],
+    ],
+    startTitle: "現在就試試看，大約 5 分鐘",
+    steps: [
+      ["問 AI 新屋的事", "提一個問題，並和論文記錄的未治理 AI 回答並列比較。每個回答都引用經治理的紀錄。", "/ask", "試問 AI →"],
+      ["播放示範訪談", "看工具一如何把一段故事，一句一句變成 CIDOC-CRM 概念圖。", "/tools/interview", "開啟工具一 →"],
+      ["瀏覽概念圖", "點開新屋的每一筆紀錄：出處、同意狀態與地理隱私都看得到。", "/nodes/xinwu", "開啟概念圖 →"],
+    ],
+    keyTitle: "選用：使用你自己的 AI",
+    keyBody: "在 AI 設定加入 Anthropic 或 OpenAI 金鑰後，兩個工具會從示範引擎改用你選的模型。",
+    keyCta: "AI 設定",
+    contact: "有問題，或有想試的收藏？請寫信到 taioliver688@gmail.com。",
   },
   crm: { E39: "人物／群體", E53: "地點", E5: "事件", E22: "人造物件", E18: "實體物", E73: "資訊物件／敘事" },
   geoTier: {
