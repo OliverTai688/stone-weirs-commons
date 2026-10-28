@@ -1,19 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { engineLabel } from "@/components/ask/AskBox";
+import { engineLabel, type Engine } from "@/components/ask/AskBox";
+import { Link, useApi, useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
 import { ConceptGraph } from "@/components/graph/ConceptGraph";
 import { crmMeta } from "@/lib/crm";
 import { demoScript, emptyState, facetLabels, openingQuestion, type Facet, type InterviewState, type Turn } from "@/lib/interview";
 
 export function InterviewTool() {
-  const [lang, setLang] = useState<"zh" | "en">("zh");
-  const [turns, setTurns] = useState<Turn[]>([{ role: "ai", content: openingQuestion.zh }]);
+  const { t, lang: uiLang } = useI18n();
+  const iv = t.interview;
+  const api = useApi();
+  const [lang, setLang] = useState<"zh" | "en">(uiLang);
+  const [turns, setTurns] = useState<Turn[]>([{ role: "ai", content: openingQuestion[uiLang] }]);
   const [state, setState] = useState<InterviewState>(emptyState());
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [engine, setEngine] = useState<Parameters<typeof engineLabel>[0] | null>(null);
+  const [engine, setEngine] = useState<Engine | null>(null);
   const [aiError, setAiError] = useState<string | undefined>();
   const [sel, setSel] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -36,14 +40,14 @@ export function InterviewTool() {
     setTurns(next);
     setInput("");
     try {
-      const res = await fetch("/api/interview", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ turns: next, state: stateRef.current, lang }) });
-      const data = (await res.json()) as { state: InterviewState; question: string; engine: Parameters<typeof engineLabel>[0]; aiError?: string };
+      const res = await api("/api/interview", { method: "POST", body: JSON.stringify({ turns: next, state: stateRef.current, lang }) });
+      const data = (await res.json()) as { state: InterviewState; question: string; engine: Engine; aiError?: string };
       setState(data.state);
       setEngine(data.engine);
       setAiError(data.aiError);
       setTurns([...next, { role: "ai", content: data.question }]);
     } catch {
-      setTurns([...next, { role: "ai", content: lang === "zh" ? "連線失敗，請再試一次。" : "Connection failed, please retry." }]);
+      setTurns([...next, { role: "ai", content: iv.failed }]);
     } finally {
       setBusy(false);
     }
@@ -53,7 +57,7 @@ export function InterviewTool() {
     reset();
     setPlaying(true);
     await new Promise((r) => setTimeout(r, 300));
-    for (const line of demoScript) {
+    for (const line of demoScript[lang]) {
       await send(line);
       await new Promise((r) => setTimeout(r, 900));
     }
@@ -61,9 +65,9 @@ export function InterviewTool() {
   }
 
   function reset() {
-    const t: Turn[] = [{ role: "ai", content: lang === "zh" ? openingQuestion.zh : openingQuestion.en }];
-    setTurns(t);
-    turnsRef.current = t;
+    const first: Turn[] = [{ role: "ai", content: openingQuestion[lang] }];
+    setTurns(first);
+    turnsRef.current = first;
     const s = emptyState();
     setState(s);
     stateRef.current = s;
@@ -100,14 +104,14 @@ export function InterviewTool() {
       <section className="card flex h-[680px] flex-col !p-0">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <div>
-            <p className="text-sm font-bold">AI 半結構訪談</p>
+            <p className="text-sm font-bold">{iv.panelTitle}</p>
             <p className="text-xs text-slate-500">
-              {engine ? engineLabel(engine) : "準備好了"}
-              {(!engine || engine.kind === "demo") && <> ・<Link href="/settings/ai" className="text-tide hover:underline">加入你的 AI 金鑰</Link></>}
+              {engine ? engineLabel(engine, t) : iv.ready}
+              {(!engine || engine.kind === "demo") && <> ・<Link href="/settings/ai" className="text-tide hover:underline">{iv.addKey}</Link></>}
             </p>
             {aiError && <p className="text-xs text-amber-700">{aiError}</p>}
           </div>
-          <select value={lang} onChange={(ev) => { setLang(ev.target.value as "zh" | "en"); }} className="rounded-lg border border-slate-200 px-2 py-1 text-xs" aria-label="訪談語言">
+          <select value={lang} onChange={(ev) => { const l = ev.target.value as "zh" | "en"; setLang(l); if (turnsRef.current.length === 1) { const first: Turn[] = [{ role: "ai", content: openingQuestion[l] }]; setTurns(first); turnsRef.current = first; } }} className="rounded-lg border border-slate-200 px-2 py-1 text-xs" aria-label={iv.langLabel}>
             <option value="zh">中文</option>
             <option value="en">English</option>
           </select>
@@ -118,18 +122,18 @@ export function InterviewTool() {
               <p className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${t.role === "user" ? "bg-navy text-white" : "bg-foam text-ink"}`}>{t.content}</p>
             </div>
           ))}
-          {busy && <p className="text-xs text-slate-400">AI 正在整理你說的內容…</p>}
+          {busy && <p className="text-xs text-slate-400">{iv.thinking}</p>}
           <div ref={chatEnd} />
         </div>
         <form onSubmit={(ev) => { ev.preventDefault(); send(input); }} className="border-t border-slate-100 p-3">
-          <textarea value={input} onChange={(ev) => setInput(ev.target.value)} rows={3} placeholder="用自己的話說…（之後可以直接上傳錄音）" className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-tide" disabled={busy || playing}
+          <textarea value={input} onChange={(ev) => setInput(ev.target.value)} rows={3} placeholder={iv.placeholder} className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-tide" disabled={busy || playing}
             onKeyDown={(ev) => { if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); send(input); } }} />
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-2">
-              <button type="button" onClick={playDemo} disabled={busy || playing} className="btn-outline !px-3 !py-1.5 text-xs">▶ 播放示範訪談</button>
-              <button type="button" disabled title="接上 Cloudflare R2 與語音辨識後啟用" className="btn-outline !px-3 !py-1.5 text-xs opacity-50">🎙 上傳錄音</button>
+              <button type="button" onClick={playDemo} disabled={busy || playing} className="btn-outline !px-3 !py-1.5 text-xs">{iv.playDemo}</button>
+              <button type="button" disabled title={iv.uploadHint} className="btn-outline !px-3 !py-1.5 text-xs opacity-50">{iv.upload}</button>
             </div>
-            <button className="btn-dark !px-4 !py-1.5" disabled={busy || playing || !input.trim()}>送出</button>
+            <button className="btn-dark !px-4 !py-1.5" disabled={busy || playing || !input.trim()}>{iv.send}</button>
           </div>
         </form>
       </section>
@@ -139,10 +143,10 @@ export function InterviewTool() {
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {facets.map((f) => (
             <span key={f} className={`rounded-full px-2.5 py-1 text-xs font-medium ${state.coverage[f] ? "bg-tide text-white" : "bg-slate-100 text-slate-500"}`}>
-              {state.coverage[f] ? "✓ " : ""}{facetLabels[f].zh}
+              {state.coverage[f] ? "✓ " : ""}{t.facets[f]}
             </span>
           ))}
-          <span className="ml-auto text-xs text-slate-500">完成 {done}／{facets.length} 個面向</span>
+          <span className="ml-auto text-xs text-slate-500">{fmt(iv.done, { done, total: facets.length })}</span>
         </div>
         {state.entities.length ? (
           <ConceptGraph
@@ -154,30 +158,30 @@ export function InterviewTool() {
           />
         ) : (
           <div className="flex h-[480px] items-center justify-center rounded-2xl border border-dashed border-slate-300 text-center text-sm text-slate-500">
-            開始說故事，概念圖會在這裡即時長出來。<br />或按「播放示範訪談」看看新屋的例子。
+            {iv.empty1}<br />{iv.empty2}
           </div>
         )}
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
           <div className="card !p-4 text-sm">
             {e ? (
               <>
-                <p className="text-xs font-bold" style={{ color: crmMeta[e.crmClass].color }}>{e.crmClass} {crmMeta[e.crmClass].zh}・{e.confirmed ? "已確認" : "AI 推測，待確認"}</p>
+                <p className="text-xs font-bold" style={{ color: crmMeta[e.crmClass].color }}>{e.crmClass} {t.crm[e.crmClass]}・{e.confirmed ? iv.confirmed : iv.unconfirmed}</p>
                 <p className="mt-1 font-bold">{e.label}</p>
                 {e.description && e.description !== e.sourceQuote && <p className="mt-1 text-slate-600">{e.description}</p>}
-                <p className="mt-2 rounded-lg bg-sand p-2 text-xs text-slate-700"><span className="font-semibold">出處（你說的話）：</span>「{e.sourceQuote}」</p>
+                <p className="mt-2 rounded-lg bg-sand p-2 text-xs text-slate-700"><span className="font-semibold">{iv.sourceSaid}</span>「{e.sourceQuote}」</p>
                 <div className="mt-2 flex gap-2">
-                  <button type="button" onClick={() => toggleConfirm(e.id)} className="btn-outline !px-3 !py-1 text-xs">{e.confirmed ? "改為待確認" : "✓ 確認"}</button>
-                  <button type="button" onClick={() => { remove(e.id); setSel(null); }} className="btn-outline !px-3 !py-1 text-xs !text-red-600">刪除</button>
+                  <button type="button" onClick={() => toggleConfirm(e.id)} className="btn-outline !px-3 !py-1 text-xs">{e.confirmed ? iv.unconfirm : iv.confirm}</button>
+                  <button type="button" onClick={() => { remove(e.id); setSel(null); }} className="btn-outline !px-3 !py-1 text-xs !text-red-600">{iv.remove}</button>
                 </div>
               </>
             ) : (
-              <p className="text-slate-500">點擊概念圖上的節點，可以看到它出自哪一句話，並確認或刪除。虛線代表 AI 推測、還沒確認。</p>
+              <p className="text-slate-500">{iv.help}</p>
             )}
           </div>
           <div className="flex flex-row gap-2 md:flex-col">
-            <button type="button" onClick={exportJsonLd} disabled={!state.entities.length} className="btn-outline !py-2 text-xs">匯出 JSON-LD</button>
-            <Link href="/join?next=/tools/interview" className="btn-primary !py-2 text-xs">登入後送出審查</Link>
-            <button type="button" onClick={reset} className="text-xs text-slate-500 hover:underline">重新開始</button>
+            <button type="button" onClick={exportJsonLd} disabled={!state.entities.length} className="btn-outline !py-2 text-xs">{iv.export}</button>
+            <Link href="/join?next=/tools/interview" className="btn-primary !py-2 text-xs">{iv.submit}</Link>
+            <button type="button" onClick={reset} className="text-xs text-slate-500 hover:underline">{iv.restart}</button>
           </div>
         </div>
       </section>

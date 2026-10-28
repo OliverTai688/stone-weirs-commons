@@ -1,15 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Link, useApi, useI18n } from "@/i18n/client";
+import { fmt } from "@/i18n/config";
+import type { Dict } from "@/i18n/dictionaries";
 
 interface Citation { id: string; nodeSlug: string; label: string }
+export type Engine = { kind: "demo" } | { kind: "llm"; provider: string; model: string; source: "user" | "platform" };
 interface Result {
   answer: string;
   citations: Citation[];
   grounded: boolean;
   mode: "llm" | "demo";
-  engine?: { kind: "demo" } | { kind: "llm"; provider: string; model: string; source: "user" | "platform" };
+  engine?: Engine;
   aiError?: string;
   baseline?: { answer: string; error: string };
 }
@@ -17,12 +20,26 @@ interface Item { q: string; r?: Result; err?: string }
 
 const VISITOR_LIMIT = 3;
 
+export function engineLabel(e: Engine | undefined | null, t: Dict) {
+  if (!e || e.kind === "demo") return t.ask.engineDemo;
+  const name = e.provider === "anthropic" ? "Anthropic" : "OpenAI";
+  return `${name} ${e.model}${e.source === "user" ? t.ask.engineYours : t.ask.enginePlatform}`;
+}
+
+function safeGet(k: string) {
+  try { return localStorage.getItem(k); } catch { return null; }
+}
+
 export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact = false }: { suggestions: string[]; nodeSlug?: string; initialQ?: string; compact?: boolean }) {
+  const { t, lang } = useI18n();
+  const a = t.ask;
+  const api = useApi();
   const [q, setQ] = useState(initialQ);
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
   const [compare, setCompare] = useState(!compact);
   const [used, setUsed] = useState(0);
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,10 +47,10 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
       const v = JSON.parse(localStorage.getItem("ask_quota") ?? "{}");
       // eslint-disable-next-line react-hooks/set-state-in-effect -- read quota from browser storage once
       setUsed(v.day === today ? v.n : 0);
+      setSignedIn(Boolean(safeGet("demo_session")));
     } catch {}
   }, []);
 
-  const signedIn = typeof window !== "undefined" && Boolean(safeGet("demo_session"));
   const blocked = !signedIn && used >= VISITOR_LIMIT;
 
   async function ask(question: string) {
@@ -42,14 +59,14 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
     setItems((x) => [{ q: question }, ...x]);
     setQ("");
     try {
-      const res = await fetch("/api/ask", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question, nodeSlugs: [nodeSlug] }) });
+      const res = await api("/api/ask", { method: "POST", body: JSON.stringify({ question, nodeSlugs: [nodeSlug] }) });
       const r = (await res.json()) as Result;
       setItems((x) => [{ q: question, r }, ...x.slice(1)]);
       const n = used + 1;
       setUsed(n);
       try { localStorage.setItem("ask_quota", JSON.stringify({ day: new Date().toISOString().slice(0, 10), n })); } catch {}
     } catch {
-      setItems((x) => [{ q: question, err: "連線失敗，請再試一次。" }, ...x.slice(1)]);
+      setItems((x) => [{ q: question, err: a.failed }, ...x.slice(1)]);
     } finally {
       setBusy(false);
     }
@@ -61,11 +78,11 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="例如：石滬故事館以前是做什麼用的？"
+          placeholder={a.placeholder}
           className="min-w-0 flex-1 rounded-full border border-slate-300 px-5 py-3 text-base outline-none focus:border-tide focus:ring-2 focus:ring-reef/40"
           disabled={blocked}
         />
-        <button className="btn-dark shrink-0" disabled={busy || blocked}>{busy ? "查找中…" : "提問"}</button>
+        <button className="btn-dark shrink-0" disabled={busy || blocked}>{busy ? a.busy : a.submit}</button>
       </form>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {suggestions.map((s) => (
@@ -78,49 +95,49 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
         {!compact && (
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />
-            並列顯示「未治理的 AI」回答（論文基準模型紀錄）
+            {a.compare}
           </label>
         )}
-        {!signedIn && <span>訪客今日已使用 {Math.min(used, VISITOR_LIMIT)}／{VISITOR_LIMIT} 題</span>}
+        {!signedIn && <span>{fmt(a.quota, { used: Math.min(used, VISITOR_LIMIT), limit: VISITOR_LIMIT })}</span>}
       </div>
 
       {blocked && (
         <div className="mt-4 rounded-2xl bg-foam p-4 text-sm">
-          今天的 3 題試用已用完。<Link href="/join?next=/ask" className="font-semibold text-tide underline">用 Google 登入，繼續提問</Link>
+          {a.quotaDone} <Link href="/join?next=/ask" className="font-semibold text-tide underline">{a.quotaLogin}</Link>
         </div>
       )}
 
       <ul className="mt-6 space-y-5">
         {items.map((it, i) => (
           <li key={i} className="space-y-3">
-            <p className="font-semibold">Q：{it.q}</p>
+            <p className="font-semibold">{lang === "zh" ? "Q：" : "Q: "}{it.q}</p>
             {it.err && <p className="text-sm text-red-600">{it.err}</p>}
-            {!it.r && !it.err && <p className="text-sm text-slate-400">正在檢索經治理的紀錄…</p>}
+            {!it.r && !it.err && <p className="text-sm text-slate-400">{a.retrieving}</p>}
             {it.r && (
               <div className={`grid gap-3 ${compare && it.r.baseline ? "md:grid-cols-2" : ""}`}>
                 {compare && it.r.baseline && (
                   <div className="rounded-2xl border border-red-200 bg-red-50/60 p-4">
-                    <p className="text-xs font-bold text-red-700">未治理的 AI（無檢索、無出處）</p>
+                    <p className="text-xs font-bold text-red-700">{a.ungoverned}</p>
                     <p className="mt-2 text-sm leading-relaxed">{it.r.baseline.answer}</p>
                     <p className="mt-2 text-xs font-semibold text-red-700">✕ {it.r.baseline.error}</p>
                   </div>
                 )}
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                   <p className="text-xs font-bold text-emerald-700">
-                    石滬・共享未來（治理檢索）<span className="ml-1 font-normal text-slate-500">・{engineLabel(it.r.engine)}</span>
+                    {a.governed}<span className="ml-1 font-normal text-slate-500">・{engineLabel(it.r.engine, t)}</span>
                   </p>
                   <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{it.r.answer}</p>
                   {it.r.citations.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {it.r.citations.map((c) => (
                         <Link key={c.id} href={`/nodes/${c.nodeSlug}/graph`} className="rounded-md bg-white px-2 py-0.5 text-[11px] font-semibold text-navy ring-1 ring-emerald-200 hover:bg-foam">
-                          出處：{c.id}・{c.label}
+                          {a.source}: {c.id}・{c.label}
                         </Link>
                       ))}
                     </div>
                   )}
                   {it.r.aiError && <p className="mt-2 text-xs text-amber-700">{it.r.aiError}</p>}
-                  {!it.r.grounded && <p className="mt-2 text-xs text-slate-500">資料不足時，AI 會直接說不知道，而不是編造。</p>}
+                  {!it.r.grounded && <p className="mt-2 text-xs text-slate-500">{a.notGrounded}</p>}
                 </div>
               </div>
             )}
@@ -129,14 +146,4 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
       </ul>
     </div>
   );
-}
-
-function safeGet(k: string) {
-  try { return localStorage.getItem(k); } catch { return null; }
-}
-
-export function engineLabel(e?: Result["engine"]) {
-  if (!e || e.kind === "demo") return "示範引擎";
-  const name = e.provider === "anthropic" ? "Anthropic" : "OpenAI";
-  return `${name} ${e.model}${e.source === "user" ? "（你的金鑰）" : "（平台）"}`;
 }

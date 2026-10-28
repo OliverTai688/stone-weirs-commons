@@ -6,6 +6,7 @@
 - **工具一** `/tools/interview`：AI 半結構訪談 → CIDOC-CRM 概念圖（每個節點連回原話）
 - **工具二** `/ask`、`/nodes/xinwu/guide`、`/exhibit/xinwu`：只根據治理紀錄回答、強制引用的問答、導覽與展場 QR
 - **後台** `/admin`：研究者聯絡名單（只匯出同意聯絡者）
+- **中英雙語**：預設英文（`/en`），頁首可切換中文（`/zh`）
 - **AI 設定** `/settings/ai`：使用者自帶 Anthropic / OpenAI 金鑰（加密儲存、只經由 BFF 使用）
 
 架構（多租戶、BFF、BYOK）見 [ARCHITECTURE.md](./ARCHITECTURE.md)。

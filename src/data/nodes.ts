@@ -20,7 +20,7 @@ export const nodes: LocalNode[] = [
       "zh-Hant": "第一個在地節點。以新屋客家漁業社群的石滬（石塭）敘事為核心，建立經治理的 CIDOC-CRM 紀錄與 AI 問答。",
       en: "The first local node: governed CIDOC-CRM records and AI Q&A built from the stone weir (shi-wen) narratives of Xinwu's Hakka fishing community.",
     },
-    tags: ["石滬", "客家", "潮間帶", "漁業知識"],
+    tags: [{ "zh-Hant": "石滬", en: "stone weirs" }, { "zh-Hant": "客家", en: "Hakka" }, { "zh-Hant": "潮間帶", en: "intertidal" }, { "zh-Hant": "漁業知識", en: "fishing knowledge" }],
     status: "active",
   },
   {
@@ -33,7 +33,7 @@ export const nodes: LocalNode[] = [
     geoTier: "public",
     languages: ["zh-Hant"],
     summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
-    tags: ["石滬"],
+    tags: [{ "zh-Hant": "石滬", en: "stone weirs" }],
     status: "invited",
   },
   {
@@ -46,7 +46,7 @@ export const nodes: LocalNode[] = [
     geoTier: "public",
     languages: ["ja"],
     summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
-    tags: ["石造魚梁"],
+    tags: [{ "zh-Hant": "石造魚梁", en: "stone fish traps" }],
     status: "invited",
   },
   {
@@ -59,7 +59,7 @@ export const nodes: LocalNode[] = [
     geoTier: "public",
     languages: ["ko"],
     summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
-    tags: ["石造魚梁"],
+    tags: [{ "zh-Hant": "石造魚梁", en: "stone fish traps" }],
     status: "invited",
   },
   {
@@ -72,12 +72,38 @@ export const nodes: LocalNode[] = [
     geoTier: "public",
     languages: ["en"],
     summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
-    tags: ["石造魚梁"],
+    tags: [{ "zh-Hant": "石造魚梁", en: "stone fish traps" }],
+    status: "invited",
+  },
+  {
+    slug: "philippines",
+    name: { "zh-Hant": "菲律賓（邀請中）", en: "Philippines (invited)" },
+    type: "research",
+    country: "PH",
+    countryName: { "zh-Hant": "菲律賓", en: "Philippines" },
+    display: { lat: 12.9, lng: 121.8 },
+    geoTier: "public",
+    languages: ["fil", "en"],
+    summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
+    tags: [{ "zh-Hant": "潮間帶漁法", en: "intertidal fishing" }],
+    status: "invited",
+  },
+  {
+    slug: "indonesia",
+    name: { "zh-Hant": "印尼（邀請中）", en: "Indonesia (invited)" },
+    type: "research",
+    country: "ID",
+    countryName: { "zh-Hant": "印尼", en: "Indonesia" },
+    display: { lat: -2.5, lng: 118.0 },
+    geoTier: "public",
+    languages: ["id", "en"],
+    summary: { "zh-Hant": "邀請在地社群或研究團隊建立節點。", en: "Inviting local communities or research teams to create this node." },
+    tags: [{ "zh-Hant": "潮間帶漁法", en: "intertidal fishing" }],
     status: "invited",
   },
 ];
 
-export const nodeLinks: NodeLink[] = ["penghu", "okinawa", "jeju", "yap"].map((to) => ({
+export const nodeLinks: NodeLink[] = ["penghu", "okinawa", "jeju", "yap", "philippines", "indonesia"].map((to) => ({
   from: "xinwu",
   to,
   type: "shared-theme" as const,
@@ -88,8 +114,8 @@ export const getNode = (slug: string) => nodes.find((n) => n.slug === slug);
 
 /** Clearly fake demo contacts for the admin screen. Replaced by Supabase `profiles`. */
 export const demoProfiles: Profile[] = [
-  { id: "d1", fullName: "示範研究者 A", email: "researcher.a@example.org", persona: "researcher", country: "JP", organization: "示範大學", interests: ["石造魚梁", "水下考古"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-15", tags: ["潛在共同作者"] },
-  { id: "d2", fullName: "示範館員 B", email: "museum.b@example.org", persona: "museum", country: "KR", organization: "示範博物館", interests: ["展場導覽"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-15", tags: ["展館試用候選"] },
-  { id: "d3", fullName: "示範社區成員 C", email: "community.c@example.org", persona: "community", country: "TW", interests: ["石滬", "客語"], contactConsent: false, signupSource: "direct", createdAt: "2026-11-16", nodeSlug: "xinwu" },
-  { id: "d4", fullName: "示範學生 D", email: "student.d@example.org", persona: "student", country: "PH", interests: ["AI", "數位人文"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-17" },
+  { id: "d1", fullName: "Demo Researcher A", email: "researcher.a@example.org", persona: "researcher", country: "JP", organization: "Demo University", interests: ["stone fish traps", "underwater archaeology"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-15", tags: ["potential co-author"] },
+  { id: "d2", fullName: "Demo Curator B", email: "museum.b@example.org", persona: "museum", country: "KR", organization: "Demo Museum", interests: ["exhibit guides"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-15", tags: ["pilot candidate"] },
+  { id: "d3", fullName: "Demo Community Member C", email: "community.c@example.org", persona: "community", country: "TW", interests: ["stone weirs", "Hakka"], contactConsent: false, signupSource: "direct", createdAt: "2026-11-16", nodeSlug: "xinwu" },
+  { id: "d4", fullName: "Demo Student D", email: "student.d@example.org", persona: "student", country: "PH", interests: ["AI", "digital humanities"], contactConsent: true, signupSource: "apconf2026", createdAt: "2026-11-17" },
 ];

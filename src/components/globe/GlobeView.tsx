@@ -7,15 +7,17 @@ import { feature } from "topojson-client";
 import type { Topology, GeometryCollection } from "topojson-specification";
 import countries110 from "world-atlas/countries-110m.json";
 import type { LocalNode, NodeLink } from "@/lib/types";
+import { pick, type Lang } from "@/i18n/config";
 
 interface Props {
   nodes: LocalNode[];
   links: NodeLink[];
   selected: string | null;
   onSelect: (slug: string) => void;
+  lang: Lang;
 }
 
-export default function GlobeView({ nodes, links, selected, onSelect }: Props) {
+export default function GlobeView({ nodes, links, selected, onSelect, lang }: Props) {
   const ref = useRef<GlobeMethods | undefined>(undefined);
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -105,15 +107,15 @@ export default function GlobeView({ nodes, links, selected, onSelect }: Props) {
           const el = document.createElement("button");
           const dot = active ? 14 : 10;
           el.type = "button";
-          el.setAttribute("aria-label", n.name["zh-Hant"] ?? n.slug);
+          el.setAttribute("aria-label", pick(n.name, lang) || n.slug);
           el.style.cssText = `pointer-events:auto;cursor:pointer;display:flex;flex-direction:${left ? "row-reverse" : "row"};align-items:center;gap:6px;transform:translate(${left ? `calc(-100% + ${dot / 2}px)` : `-${dot / 2}px`},-${dot / 2}px);background:none;border:0;padding:0;font:600 ${active ? 13 : 12}px var(--font-sans);color:${active ? "#fff" : "rgba(255,255,255,.75)"};white-space:nowrap;`;
           const ring = document.createElement("span");
           ring.style.cssText = `display:block;flex:none;width:${dot}px;height:${dot}px;border-radius:50%;background:${active ? "#e0785a" : "rgba(123,196,178,.25)"};border:2px solid ${active ? "#fff" : "#7bc4b2"};box-shadow:0 0 12px ${active ? "#e0785a" : "#7bc4b2"};`;
           const label = document.createElement("span");
-          label.textContent = n.name["zh-Hant"] ?? n.slug;
+          label.textContent = pick(n.name, lang) || n.slug;
           label.style.cssText = `text-shadow:0 1px 4px #000;${left ? "display:none;" : ""}`;
           if (left) {
-            el.title = n.name["zh-Hant"] ?? n.slug;
+            el.title = pick(n.name, lang) || n.slug;
             el.onmouseenter = () => (label.style.display = "inline");
             el.onmouseleave = () => (label.style.display = "none");
           }

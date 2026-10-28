@@ -4,6 +4,7 @@ import { Background, Controls, MarkerType, ReactFlow, type Edge, type Node } fro
 import "@xyflow/react/dist/style.css";
 import { useMemo } from "react";
 import { crmMeta, crmOrder } from "@/lib/crm";
+import { useI18n } from "@/i18n/client";
 import type { CrmClass } from "@/lib/types";
 
 export interface GraphEntity {
@@ -72,12 +73,13 @@ function layout(entities: GraphEntity[], maxRowWidth: number) {
 }
 
 export function ConceptGraph({ entities, relations, selected, onSelect, showCodes, height = 560 }: Props) {
+  const { t } = useI18n();
   const { pos, headers } = useMemo(() => layout(entities, 1150), [entities]);
 
   const headerNodes: Node[] = headers.map((h) => ({
     id: `hdr-${h.cls}`,
     position: { x: h.x, y: h.y },
-    data: { label: <span>{h.cls} {crmMeta[h.cls].zh}</span> },
+    data: { label: <span>{h.cls} {t.crm[h.cls]}</span> },
     draggable: false,
     selectable: false,
     connectable: false,
@@ -94,11 +96,11 @@ export function ConceptGraph({ entities, relations, selected, onSelect, showCode
         label: (
           <div className="text-left">
             <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: m.color }}>
-              {e.crmClass} {m.zh}
+              {e.crmClass} {t.crm[e.crmClass]}
               {e.restricted && " 🔒"}
             </div>
             <div className="text-[13px] font-semibold leading-snug text-ink">{e.label}</div>
-            {pending && <div className="mt-0.5 text-[10px] text-slate-500">AI 推測・待確認</div>}
+            {pending && <div className="mt-0.5 text-[10px] text-slate-500">{t.graph.pending}</div>}
           </div>
         ),
       },

@@ -9,10 +9,10 @@ export type GovStatus = "draft" | "in_review" | "approved" | "withdrawn";
 
 export interface Governance {
   fpic: FpicStatus;
-  license: string;
+  license: I18nText;
   geoTier: GeoTier;
   sensitivity: Sensitivity;
-  reviewerRole: string;
+  reviewerRole: I18nText;
   status: GovStatus;
 }
 
@@ -50,7 +50,7 @@ export interface LocalNode {
   geoTier: GeoTier;
   languages: string[];
   summary: I18nText;
-  tags: string[];
+  tags: I18nText[];
   status: NodeStatus;
 }
 

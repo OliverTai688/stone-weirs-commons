@@ -71,14 +71,15 @@ export async function retrieve(question: string, nodeSlugs?: string[], k = 4) {
   return [...TOPIC_TERMS].some((t) => nq.includes(t)) ? pool.filter((e) => e.crmClass === "E22" && [...TOPIC_TERMS].some((t) => norm(e.label["zh-Hant"] ?? "").includes(t))).slice(0, 1) : [];
 }
 
-const LOCATION_RE = /(精確|座標|經緯度|gps|exact location|coordinates|在哪裡.*石滬|石滬.*在哪)/i;
+const LOCATION_RE = /(精確|座標|經緯度|gps|exact location|exactly|precise location|coordinates|在哪裡.*石滬|石滬.*在哪)/i;
 
 export async function answer(question: string, opts: { nodeSlugs?: string[]; lang?: "zh-Hant" | "en"; ai?: AiClient | null } = {}): Promise<QaResult> {
   const ai = opts.ai ?? null;
   const demo = engineOf(null);
   const lang = opts.lang ?? (/[一-鿿]/.test(question) ? "zh-Hant" : "en");
   const baselineHit = baselineAnswers.find((b) => b.match.some((m) => norm(question).includes(norm(m))));
-  const baseline = baselineHit ? { answer: baselineHit.answer, error: baselineHit.error } : undefined;
+  const baseline = baselineHit ? { answer: baselineHit.answer[lang], error: baselineHit.error[lang] } : undefined;
+  const nodeTag = lang === "zh-Hant" ? "新屋" : "Xinwu";
 
   // Geo-privacy guard: never reveal restricted coordinates.
   let guard: string | undefined;
@@ -109,7 +110,7 @@ export async function answer(question: string, opts: { nodeSlugs?: string[]; lan
         (lang === "zh-Hant"
           ? "目前資料庫中沒有足夠的資訊回答這個問題。歡迎到討論區提問，或在你的在地節點新增一則故事。"
           : "There is not enough governed information to answer this yet. Ask in the community, or add a story to your local node."),
-      citations: guard ? [{ id: "X-PL-XINWU", nodeSlug: "xinwu", label: "桃園市新屋區" }] : [],
+      citations: guard ? [{ id: "X-PL-XINWU", nodeSlug: "xinwu", label: lang === "zh-Hant" ? "桃園市新屋區" : "Xinwu District, Taoyuan" }] : [],
       grounded: Boolean(guard),
       mode: "demo",
       engine: demo,
@@ -138,23 +139,37 @@ Rules:
       if (valid) {
         return { answer: guard ? `${guard}\n\n${text}` : text, citations: citations.filter((c) => cited.includes(c.id)), grounded: true, mode: "llm", engine: engineOf(ai), baseline, guard };
       }
-      aiError = "AI 回答的引用未通過驗證，改用示範引擎的結果。";
+      aiError = lang === "zh-Hant" ? "AI 回答的引用未通過驗證，改用示範引擎的結果。" : "The AI answer's citations failed validation, so the demo engine's answer is shown instead.";
     } catch (err) {
-      aiError = describeAiError(err);
+      aiError = describeAiError(err, lang === "zh-Hant" ? "zh" : "en");
     }
   }
 
   const body = hits
     .slice(0, 2)
-    .map((e) => `${e.description[lang] ?? e.description["zh-Hant"]}［新屋・${e.id}］`)
+    .map((e) => `${e.description[lang] ?? e.description["zh-Hant"]}［${nodeTag}・${e.id}］`)
     .join("\n\n");
   return { answer: guard ? `${guard}\n\n${body}` : body, citations: citations.slice(0, 2), grounded: true, mode: "demo", engine: demo, aiError, baseline, guard };
 }
 
-export function describeAiError(err: unknown): string {
+export function describeAiError(err: unknown, lang: "zh" | "en" = "zh"): string {
   const status = (err as { status?: number })?.status;
-  if (status === 401 || status === 403) return "你的 AI 金鑰無效或沒有權限，請到「AI 設定」檢查。已改用示範引擎。";
-  if (status === 429) return "你的 AI 金鑰達到用量或速率上限。已改用示範引擎。";
-  if (status === 404 || status === 400) return "所選的模型無法使用，請到「AI 設定」換一個模型。已改用示範引擎。";
-  return "AI 服務暫時無法連線，已改用示範引擎。";
+  const m = {
+    zh: {
+      auth: "你的 AI 金鑰無效或沒有權限，請到「AI 設定」檢查。已改用示範引擎。",
+      rate: "你的 AI 金鑰達到用量或速率上限。已改用示範引擎。",
+      model: "所選的模型無法使用，請到「AI 設定」換一個模型。已改用示範引擎。",
+      down: "AI 服務暫時無法連線，已改用示範引擎。",
+    },
+    en: {
+      auth: "Your AI key is invalid or lacks permission — check it in AI settings. Using the demo engine instead.",
+      rate: "Your AI key hit a usage or rate limit. Using the demo engine instead.",
+      model: "The selected model isn't available — pick another one in AI settings. Using the demo engine instead.",
+      down: "The AI service is temporarily unreachable. Using the demo engine instead.",
+    },
+  }[lang];
+  if (status === 401 || status === 403) return m.auth;
+  if (status === 429) return m.rate;
+  if (status === 404 || status === 400) return m.model;
+  return m.down;
 }

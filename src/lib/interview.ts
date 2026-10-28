@@ -66,18 +66,20 @@ export const openingQuestion = {
 };
 
 const PATTERNS: { facet: Facet; crm: CrmClass; re: RegExp }[] = [
-  { facet: "actor", crm: "E39", re: /(阿公|阿嬤|阿伯|祖先|老人家|漁民|漁夫|社區|協會|志工|居民|族人|家族|村民|[一-鿿]{1,3}人(?=[，。、把們])|fishers?|elders?|community|association|volunteers?)/gi },
-  { facet: "place", crm: "E53", re: /([一-鿿]{1,4}(?:區|鄉|鎮|村|里|港|島|灣|海岸|故事館)|[A-Z][a-z]+ (?:Village|Bay|Island|Harbour|Harbor))/g },
-  { facet: "event", crm: "E5", re: /(\d{2,4}\s*年|民國\s*\d+\s*年|日治時期|小時候|以前|後來|漲潮時|退潮時|颱風|(?:in|since) \d{4})/gi },
-  { facet: "object", crm: "E22", re: /(石滬|石塭|石牆|石頭|藻礁|漁網|竹簍|魚簍|船|鹹醢飯|料理|stone weir|fish trap|net|boat)/gi },
+  { facet: "actor", crm: "E39", re: /(阿公|阿嬤|阿伯|祖先|老人家|漁民|漁夫|社區|協會|志工|居民|族人|家族|村民|[一-鿿]{1,3}人(?=[，。、把們])|\b(?:fishers?|fishermen|grandfather|grandmother|elders?|community|association|volunteers?|villagers?)\b)/gi },
+  { facet: "place", crm: "E53", re: /([一-鿿]{1,4}(?:區|鄉|鎮|村|里|港|島|灣|海岸|故事館)|[A-Z][a-z]+ (?:District|Village|Bay|Island|Harbour|Harbor|Township|Coast))/g },
+  { facet: "event", crm: "E5", re: /(\d{2,4}\s*年|民國\s*\d+\s*年|日治時期|小時候|以前|後來|漲潮時|退潮時|颱風|\b(?:in|since) \d{4}|\bevery \d+ years|\bin the past\b|\blater\b)/gi },
+  { facet: "object", crm: "E22", re: /(石滬|石塭|石牆|石頭|藻礁|漁網|竹簍|魚簍|船|鹹醢飯|料理|\b(?:stone weirs?|fish traps?|algal reef|nets?|boats?|xianhaifan)\b)/gi },
 ];
 const TERM_RE = /[「“"『]([^」”"』]{1,12})[」”"』]/g;
-const GOV_RE = /(可以公開|不能公開|不要公開|同意|授權|不公開|public|consent|private)/i;
+const GOV_RE = /(可以公開|不能公開|不要公開|同意|授權|不公開|\bpublic\b|\bconsent\b|\bprivate\b|don't publish)/i;
 
 
 export function demoExtract(state: InterviewState, text: string, turnIndex: number, lang: "zh" | "en") {
   const s: InterviewState = structuredClone(state);
-  const has = (label: string) => s.entities.find((e) => e.label === label);
+  // Same concept, different surface form ("stone weir" / "Stone weirs") → one node.
+  const norm = (l: string) => l.toLowerCase().replace(/(?<=[a-z])s$/, "");
+  const has = (label: string) => s.entities.find((e) => norm(e.label) === norm(label));
   const add = (crmClass: CrmClass, label: string, confirmed = false) => {
     const found = has(label);
     if (found) return found;
@@ -104,7 +106,8 @@ export function demoExtract(state: InterviewState, text: string, turnIndex: numb
         const start = Math.max(text.lastIndexOf("，", idx), text.lastIndexOf("。", idx), text.lastIndexOf(",", idx), text.lastIndexOf(".", idx)) + 1;
         const ends = ["，", "。", ",", "."].map((c) => text.indexOf(c, idx)).filter((x) => x >= 0);
         const end = ends.length ? Math.min(...ends) : text.length;
-        label = text.slice(start, end).trim().slice(0, 18);
+        const clause = text.slice(start, end).trim();
+        label = /[一-鿿]/.test(clause) ? clause.slice(0, 18) : clause.length > 40 ? clause.slice(0, 40).replace(/\s+\S*$/, "") + "…" : clause;
       }
       if (label.length < 2) continue;
       const e = add(p.crm, label);
@@ -158,10 +161,19 @@ Reply with ONLY a JSON object:
 Entities and relations are only the NEW ones from the latest answer.`;
 
 /** Demo interview script built only from facts in the APCONF paper. */
-export const demoScript = [
-  "我是新屋的客家漁民，從小跟阿公在海邊。我們把石滬叫做「石塭」，漲潮的時候叫「流水來」。",
-  "新屋區海岸有石塭，也有藻礁。藻礁長得很慢，大概每 10 年才長 1 公分。",
-  "以前是志工在巡守石滬，後來成立了協會來管理。",
-  "我們也會做鹹醢飯，用鹽、蒜和米酒做成。",
-  "這段故事可以公開，但石滬的精確位置不要公開。",
-];
+export const demoScript: Record<"zh" | "en", string[]> = {
+  zh: [
+    "我是新屋的客家漁民，從小跟阿公在海邊。我們把石滬叫做「石塭」，漲潮的時候叫「流水來」。",
+    "新屋區海岸有石塭，也有藻礁。藻礁長得很慢，大概每 10 年才長 1 公分。",
+    "以前是志工在巡守石滬，後來成立了協會來管理。",
+    "我們也會做鹹醢飯，用鹽、蒜和米酒做成。",
+    "這段故事可以公開，但石滬的精確位置不要公開。",
+  ],
+  en: [
+    "I'm a Hakka fisher from Xinwu and grew up by the sea with my grandfather. We call the stone weir “shi-wen” (石塭), and the rising tide “liushueilai” (流水來).",
+    "There are stone weirs along the Xinwu District coast, and an algal reef too. The algal reef grows very slowly, about 1 cm every 10 years.",
+    "In the past volunteers patrolled the weirs, later an association was formed to manage them.",
+    "We also make xianhaifan, with salt, garlic and rice wine.",
+    "This story can be made public, but don't publish the exact location of the weirs.",
+  ],
+};

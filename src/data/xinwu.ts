@@ -14,10 +14,10 @@ import type { Entity, Governance, Relation } from "@/lib/types";
 
 const gov = (over: Partial<Governance> = {}): Governance => ({
   fpic: "assumed",
-  license: "依來源授權（正式資料匯入時確認）",
+  license: { "zh-Hant": "依來源授權（正式資料匯入時確認）", en: "Per source licence (confirmed on full import)" },
   geoTier: "public",
   sensitivity: "low",
-  reviewerRole: "在地知識持有者（待指派）",
+  reviewerRole: { "zh-Hant": "在地知識持有者（待指派）", en: "Local knowledge holder (to be assigned)" },
   status: "approved",
   ...over,
 });
@@ -60,7 +60,7 @@ export const xinwuEntities: Entity[] = [
       "zh-Hant": "石滬故事館的前身是警察宿舍。",
       en: "The Stone Weir Story Hall was formerly a police dormitory (警察宿舍).",
     },
-    keywords: ["故事館", "石滬故事館", "警察宿舍", "以前", "前身", "story hall", "police dormitory", "previous use", "former"],
+    keywords: ["故事館", "石滬故事館", "警察宿舍", "以前", "前身", "story hall", "police dormitory", "previous use", "former", "before"],
     source: SRC,
     governance: gov(),
   },
@@ -90,7 +90,7 @@ export const xinwuEntities: Entity[] = [
       { term: "石塭", romanization: "shi-wen", language: "hak", gloss: "客語：石滬" },
       { term: "石滬", romanization: "shihhu", language: "zh", gloss: "華語" },
     ],
-    keywords: ["石滬", "石塭", "客語", "客家話", "怎麼稱呼", "叫什麼", "stone weir", "Hakka term", "shihwen", "shihhu"],
+    keywords: ["石滬", "石塭", "客語", "客家話", "怎麼稱呼", "叫什麼", "stone weir", "Hakka", "Hakka term", "Hakka word", "shihwen", "shi-wen", "shihhu"],
     source: SRC,
     governance: gov(),
   },
@@ -168,7 +168,7 @@ export const xinwuEntities: Entity[] = [
       "zh-Hant": "由志工巡守轉型而成的正式組織。",
       en: "The formal organisation that grew out of the volunteer patrol.",
     },
-    keywords: ["協會", "組織", "association", "管理"],
+    keywords: ["協會", "組織", "association", "管理", "manage"],
     source: SRC,
     governance: gov(),
   },
@@ -208,7 +208,7 @@ export const xinwuEntities: Entity[] = [
       en: "The Hakka of Xinwu call the stone weir 石塭 (shi-wen). The term coexists with Mandarin 石滬 and is kept verbatim across all records.",
     },
     terms: [{ term: "石塭", romanization: "shi-wen", language: "hak" }],
-    keywords: ["石塭", "客語", "客家話", "怎麼稱呼", "叫什麼", "Hakka term", "word"],
+    keywords: ["石塭", "客語", "客家話", "怎麼稱呼", "叫什麼", "Hakka", "Hakka term", "word", "shi-wen"],
     source: SRC,
     governance: gov(),
   },
@@ -280,31 +280,40 @@ export const xinwuRelations: Relation[] = [
  * Baseline (ungoverned) answers recorded in the paper's offline evaluation,
  * shown side by side in the demo. Source: paper section 5.3.
  */
-export const baselineAnswers: { match: string[]; question: string; answer: string; error: string }[] = [
+export const baselineAnswers: {
+  match: string[];
+  question: { "zh-Hant": string; en: string };
+  answer: { "zh-Hant": string; en: string };
+  error: { "zh-Hant": string; en: string };
+}[] = [
   {
     match: ["故事館", "story hall"],
-    question: "石滬故事館以前是做什麼用的？",
-    answer: "它以前可能是社區中心或行政辦公室。（a former community centre or administrative office）",
-    error: "編造細節：實際是警察宿舍",
+    question: { "zh-Hant": "石滬故事館以前是做什麼用的？", en: "What was the Stone Weir Story Hall used for before?" },
+    answer: { "zh-Hant": "它以前可能是社區中心或行政辦公室。", en: "It was probably a former community centre or administrative office." },
+    error: { "zh-Hant": "編造細節：實際是警察宿舍", en: "Fabricated detail: it was a police dormitory" },
   },
   {
-    match: ["石塭", "客語", "客家話", "怎麼稱呼", "hakka term"],
-    question: "客家人怎麼稱呼石滬？",
-    answer: "客家人對石滬有一個獨特的說法。（a distinct word）",
-    error: "看似謹慎、實際空洞：沒有給出詞彙",
+    match: ["石塭", "客語", "客家話", "怎麼稱呼", "hakka term", "hakka call", "hakka people call", "the hakka call"],
+    question: { "zh-Hant": "客家人怎麼稱呼石滬？", en: "What do the Hakka call stone weirs?" },
+    answer: { "zh-Hant": "客家人對石滬有一個獨特的說法。", en: "The Hakka have a distinct word for stone weirs." },
+    error: { "zh-Hant": "看似謹慎、實際空洞：沒有給出詞彙", en: "Confident but empty: no term is given" },
   },
   {
     match: ["藻礁", "algal"],
-    question: "藻礁長得多快？",
-    answer: "大約每年幾公釐，或每幾十年一公分。（a few millimetres per year, or roughly one centimetre every several decades）",
-    error: "數字失真：資料記載約每 10 年 1 公分",
+    question: { "zh-Hant": "藻礁長得多快？", en: "How fast does the algal reef grow?" },
+    answer: { "zh-Hant": "大約每年幾公釐，或每幾十年一公分。", en: "A few millimetres per year, or roughly one centimetre every several decades." },
+    error: { "zh-Hant": "數字失真：資料記載約每 10 年 1 公分", en: "Quantitative distortion: the record says about 1 cm per 10 years" },
   },
   {
     match: ["鹹醢飯", "xianhaifan"],
-    question: "鹹醢飯用哪些材料？",
-    answer: "通常以鹽、蒜、米酒與醬油調味。",
-    error: "成分捏造：多加了醬油",
+    question: { "zh-Hant": "鹹醢飯用哪些材料？", en: "What ingredients go into xianhaifan?" },
+    answer: { "zh-Hant": "通常以鹽、蒜、米酒與醬油調味。", en: "It is usually seasoned with salt, garlic, rice wine and soy sauce." },
+    error: { "zh-Hant": "成分捏造：多加了醬油", en: "Ingredient fabrication: soy sauce added" },
   },
 ];
 
-export const demoQuestions = baselineAnswers.map((b) => b.question);
+/** Demo questions shown as chips, per UI language. */
+export const demoQuestions = {
+  "zh-Hant": [...baselineAnswers.map((b) => b.question["zh-Hant"]), "石滬的精確座標在哪裡？", "石滬是誰在管理？"],
+  en: [...baselineAnswers.map((b) => b.question.en), "Where exactly are the stone weirs?", "Who manages the stone weirs?"],
+};

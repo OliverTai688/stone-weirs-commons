@@ -42,9 +42,9 @@ export async function POST(req: Request) {
         s.coverage = { ...s.coverage, ...(out.coverage ?? {}) };
         return Response.json({ state: s, question: out.nextQuestion || nextQuestion(s, lang), mode: "llm", engine: engineOf(ai) });
       }
-      aiError = "AI 回傳的格式無法解析，這一輪改用示範引擎。";
+      aiError = lang === "zh" ? "AI 回傳的格式無法解析，這一輪改用示範引擎。" : "The AI reply couldn't be parsed, so this turn used the demo engine.";
     } catch (err) {
-      aiError = describeAiError(err);
+      aiError = describeAiError(err, lang);
     }
   }
   const s = demoExtract(state, last.content, turnIndex, lang);

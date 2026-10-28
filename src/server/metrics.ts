@@ -2,8 +2,6 @@ import "server-only";
 import { listEntities, listIndexableEntities, listRelations, getNode } from "./repo";
 import type { FpicStatus } from "@/lib/types";
 
-const LANG_NAMES: Record<string, string> = { hak: "客語", "zh-Hant": "華語", zh: "華語", en: "英語", ja: "日語", ko: "韓語", id: "印尼語", tl: "他加祿語", vi: "越南語" };
-
 export interface NodeMetrics {
   records: number;
   relations: number;
@@ -14,7 +12,7 @@ export interface NodeMetrics {
   restricted: number; // records in the restricted geo tier
   restrictedExposed: number; // restricted records that leaked into the AI index (must be 0)
   localTerms: number;
-  languages: string[];
+  languages: string[]; // language codes
 }
 
 /** Indicators computed from the node's current records — they change as records change. */
@@ -44,6 +42,6 @@ export async function nodeMetrics(slug: string): Promise<NodeMetrics> {
     restricted: restrictedIds.size,
     restrictedExposed: indexed.filter((e) => restrictedIds.has(e.id)).length,
     localTerms: terms,
-    languages: [...new Set([...langs].map((l) => LANG_NAMES[l] ?? l))],
+    languages: [...langs],
   };
 }

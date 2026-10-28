@@ -3,6 +3,8 @@ import { bad, forbidden, sameOrigin } from "@/server/guard";
 import { getPublicSettings, PROVIDERS, removeUserKey, setPreferred, setUserKey, updateModel, type Provider } from "@/server/ai/keystore";
 import { listModels, ProviderError } from "@/server/ai/llm";
 import { requireSession } from "@/server/session";
+import { langFromRequest } from "@/i18n/config";
+import { msg } from "@/server/messages";
 
 const isProvider = (p: unknown): p is Provider => PROVIDERS.includes(p as Provider);
 
@@ -15,18 +17,19 @@ export async function GET() {
 /** Save (or replace) a key. The key is validated against the provider before it is stored. */
 export async function PUT(req: Request) {
   if (!sameOrigin(req)) return forbidden();
-  if (!encryptionReady()) return Response.json({ error: "伺服器尚未設定 APP_ENCRYPTION_KEY，暫時無法儲存金鑰。" }, { status: 503 });
+  const m = msg(langFromRequest(req));
+  if (!encryptionReady()) return Response.json({ error: m.noEncryption }, { status: 503 });
   const { provider, apiKey, model } = (await req.json()) as { provider?: string; apiKey?: string; model?: string };
   if (!isProvider(provider)) return bad("unknown provider");
-  if (!apiKey || apiKey.length < 20 || apiKey.length > 300 || /\s/.test(apiKey)) return bad("金鑰格式不正確");
-  if (!model || model.length > 100) return bad("請選擇模型");
+  if (!apiKey || apiKey.length < 20 || apiKey.length > 300 || /\s/.test(apiKey)) return bad(m.badKey);
+  if (!model || model.length > 100) return bad(m.pickModel);
   const session = await requireSession();
   try {
     const models = await listModels(provider, apiKey);
-    if (models.length && !models.some((m) => m.id === model)) return bad("這把金鑰無法使用所選的模型");
+    if (models.length && !models.some((m) => m.id === model)) return bad(m.modelNotAllowed);
   } catch (err) {
     const status = err instanceof ProviderError ? err.status : 0;
-    return bad(status === 401 || status === 403 ? "金鑰無效，供應商拒絕了這把金鑰" : "暫時無法連線到 AI 供應商，請稍後再試");
+    return bad(status === 401 || status === 403 ? m.rejected : m.unreachable);
   }
   await setUserKey(session, provider, apiKey, model);
   return Response.json(await getPublicSettings(session));
