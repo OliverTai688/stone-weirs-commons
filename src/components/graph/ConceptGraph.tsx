@@ -31,24 +31,60 @@ interface Props {
   height?: number | string;
 }
 
-/** Column layout by CIDOC-CRM class: readable without a layout engine. */
-function layout(entities: GraphEntity[]) {
-  const cols = crmOrder.filter((c) => entities.some((e) => e.crmClass === c));
+const NODE_W = 190;
+const COL_W = 215;
+const ROW_H = 84;
+const MAX_ROWS = 3; // a class block wraps into sub-columns after this many rows
+const GROUP_GAP_X = 60;
+const GROUP_GAP_Y = 70;
+const HEADER_H = 34;
+
+/**
+ * Grouped layout: one block per CIDOC-CRM class, blocks flow left→right and wrap,
+ * so the graph stays close to the viewport's aspect ratio and labels stay legible.
+ */
+function layout(entities: GraphEntity[], maxRowWidth: number) {
   const pos: Record<string, { x: number; y: number }> = {};
-  cols.forEach((c, ci) => {
-    entities
-      .filter((e) => e.crmClass === c)
-      .forEach((e, ri) => {
-        pos[e.id] = { x: ci * 230, y: ri * 96 + (ci % 2) * 40 };
-      });
-  });
-  return pos;
+  const headers: { cls: CrmClass; x: number; y: number }[] = [];
+  let x = 0;
+  let y = 0;
+  let rowH = 0;
+  for (const c of crmOrder) {
+    const items = entities.filter((e) => e.crmClass === c);
+    if (!items.length) continue;
+    const subCols = Math.ceil(items.length / MAX_ROWS);
+    const rows = Math.min(items.length, MAX_ROWS);
+    const w = subCols * COL_W;
+    const h = HEADER_H + rows * ROW_H;
+    if (x > 0 && x + w > maxRowWidth) {
+      x = 0;
+      y += rowH + GROUP_GAP_Y;
+      rowH = 0;
+    }
+    headers.push({ cls: c, x, y });
+    items.forEach((e, i) => {
+      pos[e.id] = { x: x + Math.floor(i / MAX_ROWS) * COL_W, y: y + HEADER_H + (i % MAX_ROWS) * ROW_H };
+    });
+    x += w + GROUP_GAP_X;
+    rowH = Math.max(rowH, h);
+  }
+  return { pos, headers };
 }
 
 export function ConceptGraph({ entities, relations, selected, onSelect, showCodes, height = 560 }: Props) {
-  const pos = useMemo(() => layout(entities), [entities]);
+  const { pos, headers } = useMemo(() => layout(entities, 1150), [entities]);
 
-  const nodes: Node[] = entities.map((e) => {
+  const headerNodes: Node[] = headers.map((h) => ({
+    id: `hdr-${h.cls}`,
+    position: { x: h.x, y: h.y },
+    data: { label: <span>{h.cls} {crmMeta[h.cls].zh}</span> },
+    draggable: false,
+    selectable: false,
+    connectable: false,
+    style: { width: "auto", border: "none", background: "transparent", boxShadow: "none", padding: 0, fontSize: 13, fontWeight: 700, color: crmMeta[h.cls].color, pointerEvents: "none" as const },
+  }));
+
+  const entityNodes: Node[] = entities.map((e) => {
     const m = crmMeta[e.crmClass];
     const pending = e.confirmed === false;
     return {
@@ -67,7 +103,7 @@ export function ConceptGraph({ entities, relations, selected, onSelect, showCode
         ),
       },
       style: {
-        width: 190,
+        width: NODE_W,
         borderRadius: 12,
         padding: 8,
         background: m.bg,
@@ -77,16 +113,25 @@ export function ConceptGraph({ entities, relations, selected, onSelect, showCode
     };
   });
 
-  const edges: Edge[] = relations.map((r) => ({
-    id: r.id,
-    source: r.from,
-    target: r.to,
-    label: showCodes ? `${r.property} ${r.label}` : r.label,
-    labelStyle: { fontSize: 10, fill: "#334155" },
-    labelBgStyle: { fill: "#fff", fillOpacity: 0.85 },
-    style: { stroke: "#64748b", strokeDasharray: r.confirmed === false ? "5 4" : undefined },
-    markerEnd: { type: MarkerType.ArrowClosed, color: "#64748b" },
-  }));
+  const nodes = [...headerNodes, ...entityNodes];
+
+  // Only the selected node's relations carry labels; the rest stay as quiet lines.
+  const edges: Edge[] = relations.map((r) => {
+    const active = !selected || r.from === selected || r.to === selected;
+    const labelled = Boolean(selected) && active;
+    const color = labelled ? "#e0785a" : active ? "#64748b" : "#cbd5e1";
+    return {
+      id: r.id,
+      source: r.from,
+      target: r.to,
+      label: labelled ? (showCodes ? `${r.property} ${r.label}` : r.label) : undefined,
+      labelStyle: { fontSize: 11, fill: "#0f1e2e", fontWeight: 600 },
+      labelBgStyle: { fill: "#fff", fillOpacity: 0.92 },
+      zIndex: labelled ? 10 : 0,
+      style: { stroke: color, strokeWidth: labelled ? 2 : 1, strokeDasharray: r.confirmed === false ? "5 4" : undefined },
+      markerEnd: { type: MarkerType.ArrowClosed, color },
+    };
+  });
 
   return (
     <div style={{ height }} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -94,8 +139,8 @@ export function ConceptGraph({ entities, relations, selected, onSelect, showCode
         nodes={nodes}
         edges={edges}
         fitView
-        fitViewOptions={{ padding: 0.15 }}
-        onNodeClick={(_, n) => onSelect?.(n.id)}
+        fitViewOptions={{ padding: 0.08 }}
+        onNodeClick={(_, n) => !n.id.startsWith("hdr-") && onSelect?.(n.id)}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
         minZoom={0.3}
