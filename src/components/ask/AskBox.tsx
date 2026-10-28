@@ -51,10 +51,14 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
     } catch {}
   }, []);
 
+  // Demo (suggested) questions are unlimited; only custom questions count toward the visitor quota.
   const blocked = !signedIn && used >= VISITOR_LIMIT;
+  const norm = (s: string) => s.trim().replace(/[?？\s]+$/u, "").toLowerCase();
+  const isDemo = (question: string) => suggestions.some((s) => norm(s) === norm(question));
 
   async function ask(question: string) {
-    if (!question.trim() || busy || blocked) return;
+    const demo = isDemo(question);
+    if (!question.trim() || busy || (blocked && !demo)) return;
     setBusy(true);
     setItems((x) => [{ q: question }, ...x]);
     setQ("");
@@ -62,9 +66,11 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
       const res = await api("/api/ask", { method: "POST", body: JSON.stringify({ question, nodeSlugs: [nodeSlug] }) });
       const r = (await res.json()) as Result;
       setItems((x) => [{ q: question, r }, ...x.slice(1)]);
-      const n = used + 1;
-      setUsed(n);
-      try { localStorage.setItem("ask_quota", JSON.stringify({ day: new Date().toISOString().slice(0, 10), n })); } catch {}
+      if (!demo) {
+        const n = used + 1;
+        setUsed(n);
+        try { localStorage.setItem("ask_quota", JSON.stringify({ day: new Date().toISOString().slice(0, 10), n })); } catch {}
+      }
     } catch {
       setItems((x) => [{ q: question, err: a.failed }, ...x.slice(1)]);
     } finally {
@@ -82,11 +88,11 @@ export function AskBox({ suggestions, nodeSlug = "xinwu", initialQ = "", compact
           className="min-w-0 flex-1 rounded-full border border-slate-300 px-5 py-3 text-base outline-none focus:border-tide focus:ring-2 focus:ring-reef/40"
           disabled={blocked}
         />
-        <button className="btn-dark shrink-0" disabled={busy || blocked}>{busy ? a.busy : a.submit}</button>
+        <button className="btn-dark shrink-0" disabled={busy || (blocked && !isDemo(q))}>{busy ? a.busy : a.submit}</button>
       </form>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {suggestions.map((s) => (
-          <button key={s} type="button" onClick={() => ask(s)} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700 hover:border-tide hover:text-tide" disabled={blocked}>
+          <button key={s} type="button" onClick={() => ask(s)} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-700 hover:border-tide hover:text-tide" disabled={busy}>
             {s}
           </button>
         ))}

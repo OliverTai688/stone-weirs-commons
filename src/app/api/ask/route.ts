@@ -8,6 +8,6 @@ export async function POST(req: Request) {
   if (!question || question.length > 500) return Response.json({ error: "invalid question" }, { status: 400 });
   const session = await requireSession();
   const ai = await resolveAi(session);
-  // TODO(supabase): enforce visitor quota (3/day) per session and write qa_logs (user_id = session.userId).
+  // TODO(supabase): enforce the visitor quota (3 custom questions/day) per session — demo questions are exempt — and write qa_logs (user_id = session.userId).
   return Response.json(await answer(question, { nodeSlugs, lang, ai }));
 }
